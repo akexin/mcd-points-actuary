@@ -1,0 +1,53 @@
+{
+  "data": {
+    "activityCode": "dtx2",
+    "activityName": "麦麦积分抽奖",
+    "activityStatusText": "进行中",
+    "beginTime": "2025-01-26 00:00:00",
+    "endTime": "2030-12-31 23:59:59",
+    "drawPoint": "24",
+    "drawTypeText": "消耗积分抽奖",
+    "prizes": [
+      {
+        "name": "下单立减3元券",
+        "typeText": "优惠券"
+      },
+      {
+        "name": "下单立减2元券",
+        "typeText": "优惠券"
+      },
+      {
+        "name": "下单立减1元券",
+        "typeText": "优惠券"
+      },
+      {
+        "name": "麦辣三件套5折券",
+        "typeText": "优惠券"
+      },
+      {
+        "name": "板烧三件套5折券",
+        "typeText": "优惠券"
+      },
+      {
+        "name": "双层鳕鱼三件套6折券",
+        "typeText": "优惠券"
+      },
+      {
+        "name": "甜辣小食组合5折券",
+        "typeText": "优惠券"
+      },
+      {
+        "name": "小食四件套5.5折券",
+        "typeText": "优惠券"
+      },
+      {
+        "name": "麦旋风5折券",
+        "typeText": "优惠券"
+      },
+      {
+        "name": "30积分",
+        "typeText": "积分奖"
+      }
+    ]
+  }
+}

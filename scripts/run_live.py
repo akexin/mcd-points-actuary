@@ -86,7 +86,7 @@ def map_coupons(raw: Any) -> List[Coupon]:
 # 主流程
 # --------------------------------------------------------------------------- #
 def main(argv: Optional[List[str]] = None) -> int:
-    p = argparse.ArgumentParser(description="麦麦省钱精算师 · 端到端联调")
+    p = argparse.ArgumentParser(description="v1 能力 · 点餐链路端到端联调")
     p.add_argument("--city", default="南京市")
     p.add_argument("--keyword", default="")
     p.add_argument("--be-type", type=int, default=1, help="1-到店取餐 2-麦乐送 5-得来速 6-团餐")

@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""麦麦省钱精算师 —— 本地组合优化引擎（Stage 1 剪枝层）。
+"""麦麦积分精算师 · v1 能力：点餐组合优化引擎（Stage 1 剪枝层）。
+
+> 说明：v2 主线已转向「积分资产最优配置」（见 ``points_engine.py``）。
+> 本模块作为 v1 能力保留 —— 它把"怎么买最省"算到极致，
+> 同时也沉淀了两阶段架构（本地剪枝 + MCP 精算）的工程范式。
 
 职责
 ----
@@ -315,7 +319,7 @@ def _parse_constraints(args: argparse.Namespace) -> Constraints:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    p = argparse.ArgumentParser(description="麦麦省钱精算师 · 本地组合优化引擎")
+    p = argparse.ArgumentParser(description="v1 能力 · 点餐组合优化引擎（本地）")
     p.add_argument("--menu", required=True, help="门店菜单 JSON（含 code/name/price，可选 calories/category/tags）")
     p.add_argument("--coupons", default=None, help="优惠券 JSON（可选）")
     p.add_argument("--min-items", type=int, default=1)

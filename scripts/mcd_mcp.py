@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""麦麦省钱精算师 —— 麦当劳 MCP 轻量客户端（Streamable HTTP）。
+"""麦麦积分精算师 —— 麦当劳 MCP 轻量客户端（Streamable HTTP）。
 
 用途
 ----
 让本 Skill 的脚本层可以**直接**调用麦当劳中国 MCP Server：
 先 ``initialize`` 握手，再 ``tools/list`` / ``tools/call`` 调用具体工具。
+两个引擎（``points_engine.py`` 积分价值、``optimize_deals.py`` 点餐组合）共用本客户端。
 
 约束
 ----
@@ -23,8 +24,8 @@ Token **只从环境变量读取**，绝不写入代码或提交进仓库。
     setx MCD_MCP_TOKEN xxxxx              # Windows（需重开终端）
 
     python mcd_mcp.py list-tools
-    python mcd_mcp.py call query-meals '{"storeCode":"..."}'
-    python mcd_mcp.py call list-nutrition-foods '{}'
+    python mcd_mcp.py call query-my-account '{}'
+    python mcd_mcp.py call mall-points-products '{}'
 """
 from __future__ import annotations
 
@@ -127,7 +128,7 @@ class MCDMcpClient:
             "params": {
                 "protocolVersion": PROTOCOL_VERSION,
                 "capabilities": {},
-                "clientInfo": {"name": "mcd-saver-actuary", "version": "1.0.0"},
+                "clientInfo": {"name": "mcd-points-actuary", "version": "2.0.0"},
             },
         })
 
