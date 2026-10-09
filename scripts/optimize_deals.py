@@ -82,13 +82,31 @@ class Item:
 
 @dataclass(frozen=True)
 class Coupon:
-    """优惠券的通用描述。
+    """优惠券的通用描述（跨渠道统一模型）。
 
     type 取值（估算语义）：
       - ``threshold_reduce``：满 threshold 元减 reduce 元
       - ``item_reduce``     ：指定商品 item_code 立减 reduce 元
       - ``buy_get``         ：买 buy_code 送 get_code（购物车需同时含两者，get_code 免单）
       - ``item_free``       ：指定商品 item_code 免费
+      - ``discount``        ：整单折扣，rate 为折后比例（0.8 = 8 折），cap_cents 为封顶
+      - ``item_discount``   ：单品折扣，作用于 item_code 这件商品
+      - ``bundle_price``    ：**组合特价**，购物车含齐 ``item_codes`` 全部商品时，
+        这一组按 ``fixed_cents`` 结算。用于表达积分商城与平台最常见的
+        "X 元买这个组合"形态（例：「21.9 元巨无霸可乐组合」）。
+
+    v3 新增字段用于**跨平台**场景（第三方外卖平台与官方渠道规则差异很大）：
+      - ``rate`` / ``cap_cents``：折扣率与封顶额，支撑"8 折""半价周末"这类形态
+      - ``item_codes`` / ``fixed_cents``：组合特价券的适用商品集合与打包价
+      - ``point_cost``：获取这张券要消耗的积分（0 = 不需积分）。
+        积分是**有成本的**（有更好的用途），因此渠道定价时必须把它算进到手成本。
+      - ``stack_group``：**互斥组**。同组内只能选一张，不同组可以叠加；
+        空字符串视为同一个默认组 —— 因此"单笔只用 1 张券"的 v1 语义天然包含在内。
+      - ``min_items``：最少件数门槛
+
+    限制（**必须显式声明**）：``bundle_price`` 要求每个 ``item_codes`` 商品
+    在购物车中**各出现一次**。购物车模型是"商品集合"，无法表达"2 份某单品"，
+    因此「X 元 2 份 Y」这类券不适用本模型，需在数据层排除而非勉强近似。
     """
     id: str
     name: str
@@ -98,6 +116,16 @@ class Coupon:
     item_code: str = ""
     buy_code: str = ""
     get_code: str = ""
+    # ---- v3：跨平台与叠加 ----
+    rate: float = 0.0
+    cap_cents: int = 0
+    point_cost: int = 0
+    stack_group: str = ""
+    channel: str = ""
+    min_items: int = 0
+    # ---- v3：组合特价 ----
+    item_codes: Tuple[str, ...] = ()
+    fixed_cents: int = 0
 
     @classmethod
     def from_dict(cls, d: Dict[str, Any]) -> "Coupon":
@@ -110,6 +138,14 @@ class Coupon:
             item_code=str(d.get("item_code", "")),
             buy_code=str(d.get("buy_code", "")),
             get_code=str(d.get("get_code", "")),
+            rate=float(d.get("rate", 0) or 0),
+            cap_cents=to_cents(d.get("cap", 0)),
+            point_cost=int(d.get("point_cost", 0) or 0),
+            stack_group=str(d.get("stack_group", "") or ""),
+            channel=str(d.get("channel", "") or ""),
+            min_items=int(d.get("min_items", 0) or 0),
+            item_codes=tuple(str(c) for c in (d.get("item_codes", ()) or ())),
+            fixed_cents=to_cents(d.get("fixed", 0)),
         )
 
 
@@ -155,38 +191,80 @@ class Plan:
 # --------------------------------------------------------------------------- #
 # 优惠券估算
 # --------------------------------------------------------------------------- #
+def single_coupon_discount(combo: List[Item], c: Coupon, subtotal: Optional[int] = None) -> int:
+    """计算**单张**券在给定购物车上的抵扣额（分）；不可用则返回 0。
+
+    本函数是券体系唯一的判定入口 —— 渠道叠加求解、积分成本核算都建立在它之上，
+    避免"同一套券语义在两处各写一遍"导致的漂移。
+    """
+    if not combo:
+        return 0
+    if subtotal is None:
+        subtotal = sum(i.price_cents for i in combo)
+    if c.min_items and len(combo) < c.min_items:
+        return 0
+    codes = {i.code for i in combo}
+
+    if c.type == "threshold_reduce":
+        if subtotal < c.threshold_cents:
+            return 0
+        return min(c.reduce_cents, subtotal)
+
+    if c.type in ("item_reduce", "item_free"):
+        if not c.item_code or c.item_code not in codes:
+            return 0
+        target = next(i for i in combo if i.code == c.item_code)
+        if c.type == "item_free":
+            return target.price_cents
+        return min(c.reduce_cents, target.price_cents)
+
+    if c.type == "buy_get":
+        # 需购物车同时含 buy_code 与 get_code，赠送商品（get_code）免单
+        if not c.buy_code or not c.get_code:
+            return 0
+        if c.buy_code not in codes or c.get_code not in codes:
+            return 0
+        target = next(i for i in combo if i.code == c.get_code)
+        return target.price_cents
+
+    if c.type == "discount":
+        # 整单折扣：rate 为折后比例（0.8 = 8 折），cap_cents 为封顶
+        if subtotal < c.threshold_cents:
+            return 0
+        d = int(round(subtotal * (1.0 - c.rate)))
+        if c.cap_cents:
+            d = min(d, c.cap_cents)
+        return min(d, subtotal)
+
+    if c.type == "item_discount":
+        # 单品折扣：第三方平台常见的"半价周末""单品直降"
+        if not c.item_code or c.item_code not in codes:
+            return 0
+        target = next(i for i in combo if i.code == c.item_code)
+        d = int(round(target.price_cents * (1.0 - c.rate)))
+        if c.cap_cents:
+            d = min(d, c.cap_cents)
+        return min(d, target.price_cents)
+
+    if c.type == "bundle_price":
+        # 组合特价：含齐 item_codes 全部商品时，这一组按 fixed_cents 结算
+        if not c.item_codes or not set(c.item_codes) <= codes:
+            return 0
+        group = sum(i.price_cents for i in combo if i.code in set(c.item_codes))
+        return max(0, min(group - c.fixed_cents, subtotal))
+
+    return 0
+
+
 def estimate_best_coupon(combo: List[Item], coupons: Iterable[Coupon]) -> Tuple[Optional[Coupon], int]:
     """返回 (最优券, 抵扣分)。采用保守假设：单笔仅使用 1 张最优券。"""
     subtotal = sum(i.price_cents for i in combo)
-    codes = {i.code for i in combo}
     best_coupon: Optional[Coupon] = None
     best_discount = 0
-
     for c in coupons:
-        if c.type == "threshold_reduce":
-            if subtotal >= c.threshold_cents:
-                d = min(c.reduce_cents, subtotal)
-            else:
-                continue
-        elif c.type in ("item_reduce", "item_free"):
-            if not c.item_code or c.item_code not in codes:
-                continue
-            target = next(i for i in combo if i.code == c.item_code)
-            d = target.price_cents if c.type == "item_free" else min(c.reduce_cents, target.price_cents)
-        elif c.type == "buy_get":
-            # 需购物车同时含 buy_code 与 get_code，赠送商品（get_code）免单
-            if not c.buy_code or not c.get_code:
-                continue
-            if c.buy_code not in codes or c.get_code not in codes:
-                continue
-            target = next(i for i in combo if i.code == c.get_code)
-            d = target.price_cents
-        else:
-            continue
-
+        d = single_coupon_discount(combo, c, subtotal)
         if d > best_discount:
             best_discount, best_coupon = d, c
-
     return best_coupon, best_discount
 
 

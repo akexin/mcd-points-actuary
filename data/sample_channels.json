@@ -1,0 +1,77 @@
+{
+  "_comment": "渠道与券的样例数据。source=mcp 的渠道（麦当劳自有）其券应在运行时由 MCP 实时拉取替换，此处给出代表性券以便离线复现；source=external 的第三方平台券由用户提供。所有金额单位为『元』，point_cost 单位为『积分』。",
+  "_provenance": {
+    "third_party_forms": "美团/饿了么的券面取自 2026-10 公开活动信息（半价周末、必点榜专属券、平台满减、超级吃货卡红包等），仅用于建模演示，实际券面与叠加规则以各平台下单页为准。",
+    "captured_at": "2026-10-09"
+  },
+  "channels": [
+    {
+      "code": "mcd-pickup",
+      "name": "麦当劳 · 到店自取",
+      "source": "mcp",
+      "delivery_fee": 0,
+      "packaging_fee": 0,
+      "min_order": 0,
+      "coupon_policy": { "allow_stack": false, "max_stack": 1 },
+      "notes": "官方渠道，无配送费与打包费；单笔仅可用 1 张券",
+      "coupons": [
+        { "id": "C1", "name": "满30元减5元", "type": "threshold_reduce", "threshold": 30.0, "reduce": 5.0 },
+        { "id": "C2", "name": "麦乐鸡（5块）立减4元", "type": "item_reduce", "item_code": "CHICKEN-MCNUGGETS-5", "reduce": 4.0 },
+        { "id": "C3", "name": "买中薯条送中杯可乐", "type": "buy_get", "buy_code": "FRIES-M", "get_code": "COLA-M" },
+        { "id": "C4", "name": "圣代免费", "type": "item_free", "item_code": "SUNDAE" },
+        { "id": "PTS-BIGMAC", "name": "积分兑换·巨无霸（500积分）", "type": "item_free", "item_code": "BURGER-BIGMAC", "point_cost": 500, "stack_group": "points" },
+        { "id": "PTS-SUNDAE", "name": "积分兑换·圣代（20积分）", "type": "item_free", "item_code": "SUNDAE", "point_cost": 20, "stack_group": "points" }
+      ]
+    },
+    {
+      "code": "mcd-delivery",
+      "name": "麦当劳 · 麦乐送",
+      "source": "mcp",
+      "delivery_fee": 9.0,
+      "packaging_fee": 0,
+      "min_order": 0,
+      "free_delivery_threshold": 39.0,
+      "coupon_policy": { "allow_stack": false, "max_stack": 1 },
+      "notes": "官方外送，配送费 9 元、满 39 元免",
+      "coupons": [
+        { "id": "C1", "name": "满30元减5元", "type": "threshold_reduce", "threshold": 30.0, "reduce": 5.0 },
+        { "id": "D1", "name": "麦乐送满50减12", "type": "threshold_reduce", "threshold": 50.0, "reduce": 12.0 }
+      ]
+    },
+    {
+      "code": "meituan",
+      "name": "美团外卖",
+      "source": "external",
+      "delivery_fee": 3.5,
+      "packaging_fee": 1.5,
+      "min_order": 20.0,
+      "free_delivery_threshold": 0,
+      "coupon_policy": { "allow_stack": true, "max_stack": 2 },
+      "notes": "平台券 + 商家券 + 必点榜券可叠加（最多 2 张整单券）；另有单品半价活动",
+      "coupons": [
+        { "id": "MT-PLAT-39", "name": "美团平台券 满39减8", "type": "threshold_reduce", "threshold": 39.0, "reduce": 8.0, "stack_group": "platform", "channel": "meituan" },
+        { "id": "MT-PLAT-69", "name": "美团平台券 满69减15", "type": "threshold_reduce", "threshold": 69.0, "reduce": 15.0, "stack_group": "platform", "channel": "meituan" },
+        { "id": "MT-PLAT-99", "name": "美团平台券 满99减20", "type": "threshold_reduce", "threshold": 99.0, "reduce": 20.0, "stack_group": "platform", "channel": "meituan" },
+        { "id": "MT-SHOP-30", "name": "麦当劳商家券 满30减8", "type": "threshold_reduce", "threshold": 30.0, "reduce": 8.0, "stack_group": "shop", "channel": "meituan" },
+        { "id": "MT-BZB-5", "name": "必点榜专属无门槛券 减5", "type": "threshold_reduce", "threshold": 0.0, "reduce": 5.0, "stack_group": "bzb", "channel": "meituan" },
+        { "id": "MT-HALF-BIGMAC", "name": "半价周末·巨无霸 5折", "type": "item_discount", "item_code": "BURGER-BIGMAC", "rate": 0.5, "cap": 15.0, "stack_group": "half", "channel": "meituan" }
+      ]
+    },
+    {
+      "code": "eleme",
+      "name": "饿了么",
+      "source": "external",
+      "delivery_fee": 4.5,
+      "packaging_fee": 1.0,
+      "min_order": 20.0,
+      "coupon_policy": { "allow_stack": true, "max_stack": 2 },
+      "notes": "超级吃货卡红包（无门槛）+ 店铺满减可叠加",
+      "coupons": [
+        { "id": "ELE-RED-6", "name": "超级吃货卡红包 无门槛减6", "type": "threshold_reduce", "threshold": 0.0, "reduce": 6.0, "stack_group": "red_packet", "channel": "eleme" },
+        { "id": "ELE-SHOP-35", "name": "店铺满减 满35减10", "type": "threshold_reduce", "threshold": 35.0, "reduce": 10.0, "stack_group": "shop", "channel": "eleme" },
+        { "id": "ELE-SHOP-60", "name": "店铺满减 满60减18", "type": "threshold_reduce", "threshold": 60.0, "reduce": 18.0, "stack_group": "shop", "channel": "eleme" },
+        { "id": "ELE-DISC-88", "name": "饿了么整单 88折（封顶12元）", "type": "discount", "rate": 0.88, "cap": 12.0, "threshold": 30.0, "stack_group": "discount", "channel": "eleme" }
+      ]
+    }
+  ]
+}

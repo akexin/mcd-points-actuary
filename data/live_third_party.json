@@ -1,0 +1,52 @@
+{
+  "_comment": "第三方外卖平台（美团 / 饿了么）的渠道费率与券面。**这部分数据 MCP 拿不到**，必须由用户提供或从平台活动页抄录。券里的商品用**中文名**声明（item_name / item_names），运行时会按精确同名解析成当前门店的真实菜单编码；解析不到的券会被丢弃并在报告中列出，绝不猜测。",
+  "_provenance": {
+    "third_party_forms": "券面形态取自 2026-10 美团/饿了么对麦当劳门店的公开活动（平台满减、商家满减、必点榜专属券、半价周末、超级吃货卡红包、店铺满减、整单折扣）。仅用于建模演示。",
+    "captured_at": "2026-10-09",
+    "caveat": "各平台券的可领状态、门槛与叠加规则因人因店因时段而异，且平台随时调整；实际应付金额以各平台下单页为准。",
+    "item_resolution": "item_name 等字段必须与麦当劳 MCP 返回的菜单名称完全一致才会被采用（示例：巨无霸 / 薯条 / 可乐 / 麦乐鸡 / 麦辣鸡腿汉堡 / 麦辣鸡翅 / 板烧鸡腿堡 / 派）。"
+  },
+  "channels": [
+    {
+      "code": "meituan",
+      "name": "美团外卖",
+      "source": "external",
+      "delivery_fee": 3.5,
+      "packaging_fee": 1.5,
+      "min_order": 20.0,
+      "free_delivery_threshold": 0,
+      "price_factor": 1.0,
+      "coupon_policy": { "allow_stack": true, "max_stack": 2 },
+      "notes": "标价按与门店菜单同价估算（price_factor=1.0，未经实查）；平台券 + 商家券 + 必点榜券 + 单品半价可叠加，但整单级券最多 2 张",
+      "coupons": [
+        { "id": "MT-PLAT-39", "name": "美团平台券 满39减8", "type": "threshold_reduce", "threshold": 39.0, "reduce": 8.0, "stack_group": "platform" },
+        { "id": "MT-PLAT-69", "name": "美团平台券 满69减15", "type": "threshold_reduce", "threshold": 69.0, "reduce": 15.0, "stack_group": "platform" },
+        { "id": "MT-PLAT-99", "name": "美团平台券 满99减20", "type": "threshold_reduce", "threshold": 99.0, "reduce": 20.0, "stack_group": "platform" },
+        { "id": "MT-SHOP-30", "name": "麦当劳商家券 满30减8", "type": "threshold_reduce", "threshold": 30.0, "reduce": 8.0, "stack_group": "shop" },
+        { "id": "MT-BZB-5", "name": "必点榜专属无门槛券 减5", "type": "threshold_reduce", "threshold": 0.0, "reduce": 5.0, "stack_group": "bzb" },
+        { "id": "MT-HALF-BIGMAC", "name": "半价周末 · 巨无霸 5折（封顶15）", "type": "item_discount", "item_name": "巨无霸", "rate": 0.5, "cap": 15.0, "stack_group": "half" },
+        { "id": "MT-ITEM-NUGGETS", "name": "麦乐鸡立减4元", "type": "item_reduce", "item_name": "麦乐鸡", "reduce": 4.0, "stack_group": "item_nuggets" },
+        { "id": "MT-BUYGET-COLA", "name": "买薯条送可乐", "type": "buy_get", "buy_name": "薯条", "get_name": "可乐", "stack_group": "buyget" }
+      ]
+    },
+    {
+      "code": "eleme",
+      "name": "饿了么",
+      "source": "external",
+      "delivery_fee": 4.5,
+      "packaging_fee": 1.0,
+      "min_order": 20.0,
+      "free_delivery_threshold": 0,
+      "price_factor": 1.0,
+      "coupon_policy": { "allow_stack": true, "max_stack": 2 },
+      "notes": "超级吃货卡红包（无门槛）+ 店铺满减 + 整单折扣；标价按与门店菜单同价估算",
+      "coupons": [
+        { "id": "ELE-RED-6", "name": "超级吃货卡红包 无门槛减6", "type": "threshold_reduce", "threshold": 0.0, "reduce": 6.0, "stack_group": "red_packet" },
+        { "id": "ELE-SHOP-35", "name": "店铺满减 满35减10", "type": "threshold_reduce", "threshold": 35.0, "reduce": 10.0, "stack_group": "shop" },
+        { "id": "ELE-SHOP-60", "name": "店铺满减 满60减18", "type": "threshold_reduce", "threshold": 60.0, "reduce": 18.0, "stack_group": "shop" },
+        { "id": "ELE-DISC-88", "name": "饿了么整单 88折（封顶12）", "type": "discount", "rate": 0.88, "threshold": 30.0, "cap": 12.0, "stack_group": "discount" },
+        { "id": "ELE-ITEM-MCALWING", "name": "麦辣鸡翅单品直降3元", "type": "item_reduce", "item_name": "麦辣鸡翅", "reduce": 3.0, "stack_group": "item_wing" }
+      ]
+    }
+  ]
+}

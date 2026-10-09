@@ -6,7 +6,15 @@
 ----
 让本 Skill 的脚本层可以**直接**调用麦当劳中国 MCP Server：
 先 ``initialize`` 握手，再 ``tools/list`` / ``tools/call`` 调用具体工具。
-两个引擎（``points_engine.py`` 积分价值、``optimize_deals.py`` 点餐组合）共用本客户端。
+三个引擎共用本客户端 —— ``optimize_deals.py``（点餐组合）、
+``points_engine.py``（积分价值）、``channel_planner.py``（跨渠道到手成本）。
+
+取数有两条路径，**优先走结构化那条**：
+
+- :meth:`MCDMcpClient.call_structured` —— 优先读响应的 ``structuredContent``
+  （服务端预解析好的 JSON），缺失时回退到文本提取。**日常取数用这个。**
+- :meth:`MCDMcpClient.call_json` —— 从「说明文字 + JSON + 尾部指令」混合文本里
+  枚举 ``{`` 起点取跨度最大的对象。保留用于兼容不返回 ``structuredContent`` 的 Tool。
 
 约束
 ----
@@ -128,7 +136,7 @@ class MCDMcpClient:
             "params": {
                 "protocolVersion": PROTOCOL_VERSION,
                 "capabilities": {},
-                "clientInfo": {"name": "mcd-points-actuary", "version": "2.0.0"},
+                "clientInfo": {"name": "mcd-points-actuary", "version": "3.0.0"},
             },
         })
 
@@ -152,6 +160,21 @@ class MCDMcpClient:
         本方法负责把其中的顶层 JSON 对象提取出来。
         """
         result = self.call_tool(name, arguments)
+        return extract_json(_text_of(result))
+
+    def call_structured(self, name: str, arguments: Optional[Dict[str, Any]] = None) -> Any:
+        """调用 Tool 并返回**结构化业务数据**（首选路径）。
+
+        麦当劳 MCP 的 ``tools/call`` 结果里通常已含 ``structuredContent`` ——
+        服务端预解析好的 JSON，比从说明文字里正则捞 JSON 稳健得多。
+        旧版本或不返回该字段的 Tool 自动回退到 :meth:`call_json` 的文本提取。
+
+        注意：``structuredContent`` 存在时其内容就**是**业务 JSON（顶层即
+        ``{"success":…, "data":…}``），无需再取 ``.data``。
+        """
+        result = self.call_tool(name, arguments)
+        if isinstance(result, dict) and result.get("structuredContent") is not None:
+            return result["structuredContent"]
         return extract_json(_text_of(result))
 
 
