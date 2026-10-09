@@ -229,7 +229,12 @@ def evaluate(combo: List[Item], coupons: Iterable[Coupon], cons: Constraints) ->
 # 枚举与剪枝
 # --------------------------------------------------------------------------- #
 def _prune_items(items: List[Item], cons: Constraints, max_combos: int) -> Tuple[List[Item], bool]:
-    """组合数过多时，先用启发式缩减候选集（保留必点项与低价项）。"""
+    """组合数过多时，用启发式缩减候选集。
+
+    关键点：**不能只保留最便宜的商品** —— 那样在真实菜单上会选出全是调味酱的组合。
+    改为**按分类轮转取样**（每个分类各取最便宜的若干项），保证候选池覆盖主食、小食、
+    饮品等多个品类，同时把组合数压到可控范围。
+    """
     n = len(items)
     total = 0
     for k in range(cons.min_items, min(cons.max_items, n) + 1):
@@ -237,14 +242,26 @@ def _prune_items(items: List[Item], cons: Constraints, max_combos: int) -> Tuple
     if total <= max_combos:
         return items, False
 
-    keep: Dict[str, Item] = {}
-    for it in items:
-        if it.code in cons.must_include:
-            keep[it.code] = it
-    for it in sorted(items, key=lambda x: x.price_cents):
-        if len(keep) >= max(cons.max_items * 3, cons.max_items + 4):
+    keep: Dict[str, Item] = {it.code: it for it in items if it.code in cons.must_include}
+
+    groups: Dict[str, List[Item]] = {}
+    for it in sorted(items, key=lambda x: (x.price_cents, x.code)):
+        groups.setdefault(it.category or "未分类", []).append(it)
+
+    target = max(cons.max_items * 3, cons.max_items + 4)
+    idx = 0
+    while len(keep) < target:
+        progressed = False
+        for key in sorted(groups):
+            bucket = groups[key]
+            if idx < len(bucket):
+                keep.setdefault(bucket[idx].code, bucket[idx])
+                progressed = True
+                if len(keep) >= target:
+                    break
+        if not progressed:  # 所有分类都已取尽
             break
-        keep.setdefault(it.code, it)
+        idx += 1
     return list(keep.values()), True
 
 

@@ -31,6 +31,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import sys
 import time
 import urllib.error
@@ -142,6 +143,49 @@ class MCDMcpClient:
             "params": {"name": name, "arguments": arguments or {}},
         })
         return res.get("result")
+
+    def call_json(self, name: str, arguments: Optional[Dict[str, Any]] = None) -> Any:
+        """调用 Tool 并直接返回解析后的业务 JSON。
+
+        麦当劳 MCP 的多数 Tool 返回的是**「说明文字 + JSON」混合文本**，
+        本方法负责把其中的顶层 JSON 对象提取出来。
+        """
+        result = self.call_tool(name, arguments)
+        return extract_json(_text_of(result))
+
+
+def _text_of(result: Any) -> str:
+    """从 MCP tools/call 结果中取出文本内容。"""
+    if isinstance(result, dict) and isinstance(result.get("content"), list):
+        parts = [c.get("text", "") for c in result["content"] if isinstance(c, dict)]
+        return "\n".join(p for p in parts if p)
+    if isinstance(result, str):
+        return result
+    return json.dumps(result, ensure_ascii=False)
+
+
+def extract_json(text: str) -> Any:
+    """从「说明文字 + JSON + 尾部指令」混合文本中提取顶层 JSON。
+
+    麦当劳 MCP 的响应格式并不固定：JSON 可能位于文本中部，前后都有说明性文字。
+    策略：枚举每个 ``{`` 起点做 ``raw_decode``，取**解析跨度最长**的对象 —— 顶层对象
+    必然包含所有子对象，因此跨度最大。
+    """
+    text = text.strip()
+    decoder = json.JSONDecoder()
+    best_obj: Any = None
+    best_span = -1
+    for match in re.finditer(r"\{", text):
+        start = match.start()
+        try:
+            obj, end = decoder.raw_decode(text[start:])
+        except (json.JSONDecodeError, ValueError):
+            continue
+        if end > best_span:
+            best_span, best_obj = end, obj
+    if best_span < 0:
+        raise MCPError(f"响应文本中未找到合法 JSON（前 200 字符：{text[:200]!r}）")
+    return best_obj
 
 
 # --------------------------------------------------------------------------- #

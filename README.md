@@ -108,6 +108,38 @@ python scripts/mcd_mcp.py list-tools
 python scripts/mcd_mcp.py call query-nearby-stores '{"address":"上海人民广场"}'
 ```
 
+### 示例 C · 端到端联调（真实门店 + 真实计价）
+
+一条命令跑完 `SKILL.md` 的五步工作流：定位门店 → 拉取菜单/券 → 本地剪枝 → MCP 精确计价。
+
+```bash
+export MCD_MCP_TOKEN=你的Token
+python scripts/run_live.py --city 南京市 --keyword 新街口 \
+    --must-include 1100 --min-items 2 --max-items 3 --budget 45 --top 4
+```
+
+真实运行输出（2026-10-09，麦当劳南京新百餐厅）：
+
+```text
+[1] 已连接 MCP：{'name': 'mcd-mcp', 'version': '1.0.0'}
+[2] 门店：麦当劳南京新百餐厅（中山南路1号A座负一层G-A-025号商铺）storeCode=1990346
+[3] 菜单：124 个商品
+[4] query-store-coupons：原始 0 条，映射 0 条
+[4] query-my-coupons：当前无可用券
+[5] Stage 1 本地剪枝（启发式）：得到 4 个候选
+
+[6] Stage 2 · calculate-price 精确计价：
+ #       估算到手       实算到手       偏差  组合
+------------------------------------------------------------------------------
+ 1     ¥31.50     ¥31.50    +0.00  巨无霸 + 圆筒冰淇淋
+ 2     ¥38.40     ¥38.40    +0.00  巨无霸 + 蘸酱炸鸡
+ 3     ¥38.50     ¥38.50    +0.00  巨无霸 + 如意百宝袋
+ 4     ¥40.50     ¥40.50    +0.00  巨无霸 + 牛肉堡单品精选
+```
+
+**关键验证**：本地估算与 MCP 实算**偏差为 ¥0.00**，说明剪枝层的排序与真实计价一致 ——
+即"用本地算力换 MCP 调用次数"这一取舍是成立的。
+
 拿到菜单与券后，按 `SKILL.md` 的五步工作流让 Agent 完成精算并输出结论。
 
 ## 目录结构
@@ -122,7 +154,8 @@ mcd-saver-actuary/
 ├── workbuddy.md                   # WorkBuddy 开发对话上下文
 ├── scripts/
 │   ├── optimize_deals.py          # 本地组合剪枝引擎
-│   └── mcd_mcp.py                 # MCP Streamable HTTP 客户端
+│   ├── mcd_mcp.py                 # MCP Streamable HTTP 客户端
+│   └── run_live.py                # 端到端联调（真实门店 → 真实计价）
 ├── data/
 │   ├── sample_menu.json           # 脱敏示例菜单
 │   └── sample_coupons.json        # 脱敏示例优惠券
