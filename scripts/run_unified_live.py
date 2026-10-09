@@ -56,6 +56,7 @@ import json
 import os
 import re
 import sys
+import unicodedata
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -83,6 +84,33 @@ OFFLINE_OFFERS = os.path.join(ROOT, "data", "sample_points_products.json")
 
 MCP_CALLS_NOTE = ("本次联调共 {n} 次 MCP 调用（全部只读）；"
                   "组合枚举、券叠加、积分折算均在本地完成，未占用 MCP 计价配额。")
+
+
+# --------------------------------------------------------------------------- #
+# 终端列宽
+# --------------------------------------------------------------------------- #
+def dwidth(s: str) -> int:
+    """字符串在等宽终端里占多少**列**（汉字/全角 2 列，其余 1 列）。
+
+    为什么不直接用 ``len()``：``f"{'巨无霸':<20}"`` 按**字符数**补空格，
+    而汉字占 2 列 —— 于是"巨无霸"只补了 17 个空格，看起来比 20 列短一截，
+    整张表的列就会逐行错位。本文件所有表格都改用 :func:`dpad` 按列宽补齐，
+    这样输出在真实终端里是**目视对齐**的，截图也就跟着对齐。
+    """
+    return sum(2 if unicodedata.east_asian_width(c) in ("W", "F") else 1 for c in s)
+
+
+def dpad(s: str, width: int, align: str = "<") -> str:
+    """按显示列宽补齐到 ``width`` 列；超宽则原样返回（不截断，宁可错位也不丢信息）。"""
+    gap = width - dwidth(s)
+    if gap <= 0:
+        return s
+    if align == ">":
+        return " " * gap + s
+    if align == "^":
+        left = gap // 2
+        return " " * left + s + " " * (gap - left)
+    return s + " " * gap
 
 
 # --------------------------------------------------------------------------- #
@@ -405,18 +433,22 @@ def print_points_table(details: Sequence[Dict[str, Any]], shadow_ypp: float) -> 
     if not details:
         print("  无可用积分餐品券（映射为空，或映射的标的已不在当前商城）")
         return
-    print(f"{'积分餐品券':<26}{'积分':>6}{'菜单价':>9}{'打包价':>9}{'抵扣':>8}"
-          f"{'打平ypp':>9}{'判定':>10}")
-    print("-" * 84)
+    print(dpad("积分餐品券", 28) + dpad("积分", 8, ">") + dpad("菜单价", 10, ">")
+          + dpad("打包价", 10, ">") + dpad("抵扣", 9, ">")
+          + dpad("打平ypp", 10, ">") + dpad("判定", 13, ">"))
+    print("-" * 88)
     for d in sorted(details, key=lambda x: -x["discount_cents"]):
         be = d["breakeven_ypp"]
         if shadow_ypp <= 0:
             verdict = "划算(积分免费)"
         else:
             verdict = "划算" if be >= shadow_ypp else "不划算"
-        print(f"{d['name']:<26}{d['point']:>6}{fmt_yuan(d['menu_cents']):>9}"
-              f"{fmt_yuan(d['fixed_cents']):>9}{fmt_yuan(d['discount_cents']):>8}"
-              f"{be:>9.4f}{verdict:>10}")
+        print(dpad(d["name"], 28) + dpad(str(d["point"]), 8, ">")
+              + dpad(fmt_yuan(d["menu_cents"]), 10, ">")
+              + dpad(fmt_yuan(d["fixed_cents"]), 10, ">")
+              + dpad(fmt_yuan(d["discount_cents"]), 9, ">")
+              + dpad(f"{be:.4f}", 10, ">")
+              + dpad(verdict, 13, ">"))
     if shadow_ypp > 0:
         print(f"\n  判定口径：**打平 ypp = 抵扣额 ÷ 积分消耗**。只要它低于影子价格 "
               f"{fmt_ypp(shadow_ypp)}，")
@@ -430,19 +462,25 @@ def print_points_table(details: Sequence[Dict[str, Any]], shadow_ypp: float) -> 
 
 def print_quotes(combo: Sequence[Item], quotes: Sequence[Quote]) -> None:
     print(f"\n购物车：{' + '.join(i.name for i in combo)}")
-    print(f"{'渠道':<20}{'券后':>9}{'配送':>7}{'打包':>7}{'现金':>9}{'积分':>6}"
-          f"{'积分成本':>9}{'到手成本':>10}  券")
+    print(dpad("渠道", 22) + dpad("券后", 10, ">") + dpad("配送", 8, ">")
+          + dpad("打包", 8, ">") + dpad("现金", 10, ">") + dpad("积分", 7, ">")
+          + dpad("积分成本", 10, ">") + dpad("到手成本", 11, ">") + "  券")
     print("-" * 110)
     for q in quotes:
         if not q.feasible:
-            print(f"{q.channel.name:<20}{'—':>9}{'—':>7}{'—':>7}{'—':>9}{'—':>6}{'—':>9}"
-                  f"{'不可行':>10}  {q.reason}")
+            print(dpad(q.channel.name, 22) + dpad("—", 10, ">") + dpad("—", 8, ">")
+                  + dpad("—", 8, ">") + dpad("—", 10, ">") + dpad("—", 7, ">")
+                  + dpad("—", 10, ">") + dpad("不可行", 11, ">") + f"  {q.reason}")
             continue
         ct = " + ".join(c.name for c in q.coupons) or "无"
-        print(f"{q.channel.name:<20}{fmt_yuan(q.goods_cents - q.discount_cents):>9}"
-              f"{fmt_yuan(q.delivery_cents):>7}{fmt_yuan(q.packaging_cents):>7}"
-              f"{fmt_yuan(q.cash_cents):>9}{q.point_cost:>6}"
-              f"{fmt_yuan(q.point_value_cents):>9}{fmt_yuan(q.landed_cents):>10}  {ct}")
+        print(dpad(q.channel.name, 22)
+              + dpad(fmt_yuan(q.goods_cents - q.discount_cents), 10, ">")
+              + dpad(fmt_yuan(q.delivery_cents), 8, ">")
+              + dpad(fmt_yuan(q.packaging_cents), 8, ">")
+              + dpad(fmt_yuan(q.cash_cents), 10, ">")
+              + dpad(str(q.point_cost), 7, ">")
+              + dpad(fmt_yuan(q.point_value_cents), 10, ">")
+              + dpad(fmt_yuan(q.landed_cents), 11, ">") + f"  {ct}")
 
 
 # --------------------------------------------------------------------------- #
@@ -478,7 +516,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     own_delivery: List[Coupon] = []
     offers_raw: List[Dict[str, Any]] = []
     account: Dict[str, Any] = {}
-    claimable: List[str] = []
+    claimable: Any = None          # (原始名称列表, 去重后名称列表)
     store: Dict[str, Any] = {}
     delivery_available = False
 
@@ -538,7 +576,13 @@ def main(argv: Optional[List[str]] = None) -> int:
             report["calls"].append(tool)
         try:
             rows = client.call_structured("available-coupons", {}).get("data") or []
-            claimable = [str(r.get("couponName")) for r in rows if isinstance(r, dict)][:8]
+            names = [str(r.get("couponName")) for r in rows if isinstance(r, dict)]
+            # 接口对同一张券会按不同活动实例重复返回；按名称去重后再展示，
+            # 但**同时保留原始条数**，避免把"去重"伪装成"只有这么多"
+            seen_names: Dict[str, None] = {}
+            for n in names:
+                seen_names.setdefault(n, None)
+            claimable = (names, list(seen_names))
             report["calls"].append("available-coupons")
         except Exception:  # noqa: BLE001
             pass
@@ -627,18 +671,25 @@ def main(argv: Optional[List[str]] = None) -> int:
     print("=" * 74)
     print("  ③ 渠道与券池（自有渠道来自 MCP 实查，第三方由用户提供）")
     print("=" * 74)
-    print(f"{'渠道':<20}{'来源':<18}{'配送':>7}{'打包':>7}{'起送':>7}{'叠加':>10}{'券数':>6}")
+    print(dpad("渠道", 22) + dpad("来源", 20) + dpad("配送", 8, ">")
+          + dpad("打包", 8, ">") + dpad("起送", 8, ">") + dpad("叠加", 11, ">")
+          + dpad("券数", 7, ">"))
     print("-" * 84)
     for ch in channels:
         src = "第三方(用户提供)" if ch.is_external else "麦当劳官方(MCP)"
         stk = f"最多 {ch.max_stack} 张" if ch.allow_stack else "单张"
-        print(f"{ch.name:<20}{src:<18}{fmt_yuan(ch.delivery_fee_cents):>7}"
-              f"{fmt_yuan(ch.packaging_fee_cents):>7}{fmt_yuan(ch.min_order_cents):>7}"
-              f"{stk:>10}{len(ch.coupons):>6}")
+        print(dpad(ch.name, 22) + dpad(src, 20)
+              + dpad(fmt_yuan(ch.delivery_fee_cents), 8, ">")
+              + dpad(fmt_yuan(ch.packaging_fee_cents), 8, ">")
+              + dpad(fmt_yuan(ch.min_order_cents), 8, ">")
+              + dpad(stk, 11, ">") + dpad(str(len(ch.coupons)), 7, ">"))
     for name in tp_dropped:
         print(f"  ! 未采用：{name}")
     if claimable:
-        print(f"\n  可领取但**未建模**（接口只给名称不给面额，无法量化）：{'、'.join(claimable)}")
+        raw_names, uniq = claimable
+        print(f"\n  可领取 {len(raw_names)} 条（去重后 {len(uniq)} 个名称）—— "
+              f"接口只给名称不给面额，**无法量化**，故不参与计算：")
+        print(f"    {'、'.join(uniq)}")
 
     # ── 求解 ──────────────────────────────────────────────────────────── #
     print()

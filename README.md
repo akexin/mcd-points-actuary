@@ -6,10 +6,15 @@
 
 [![MCP](https://img.shields.io/badge/MCP-麦当劳中国-red)](https://open.mcd.cn/mcp)
 [![Python](https://img.shields.io/badge/python-3.9%2B-blue)](https://www.python.org/)
-[![Tests](https://img.shields.io/badge/tests-114%20passed-brightgreen)](tests/)
+[![Tests](https://img.shields.io/badge/tests-118%20passed-brightgreen)](tests/)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
 ---
+
+![架构总览：数据来源 → 本地求解 → 统一目标函数 → 输出](assets/architecture.png)
+
+> 上图四个阶段的**相邻两层之间没有网络调用**：7 次只读 MCP 取数之后，
+> 组合枚举、券叠加、积分折算全部在本地完成，不占用 MCP 计价配额。
 
 ## 一句话价值
 
@@ -48,6 +53,11 @@
 
 > **打平 ypp = 抵扣额 ÷ 积分消耗。** 只有它**低于**影子价格（0.1380），用这张券才亏。
 > 上表 6 张券全部远低于基准 —— 结论很反直觉：**积分商城里"抵得最多"的券，恰恰是最不该换的**。
+
+终端里的真实样子（含 ①积分定价 与 ②积分券打平线 两段，原始输出见
+[`docs/captures/unified-live.txt`](docs/captures/unified-live.txt)）：
+
+![真实运行：积分定价与积分券打平线](assets/screenshot-points.png)
 > 同样的券，如果你有积分即将过期（`--shadow-ypp 0`，视为沉没成本），立刻全部变成划算。
 > 两种口径的差异，就是"积分到期前该不该突击兑换"的量化答案。
 
@@ -114,7 +124,7 @@
 - 🎲 **抽奖期望值边界分析**：零概率信息下给出可复核结论
 - ⏳ **到期止损**：把"还有多少积分会白扔"变成带金额的结论
 - 🧮 **金额全程以「分」整数计算**，无浮点误差
-- 🔌 **离线可测 + 离线可跑**：114 项单元测试全绿；`--offline` 无需 Token 即可复现全流程
+- 🔌 **离线可测 + 离线可跑**：118 项单元测试全绿；`--offline` 无需 Token 即可复现全流程
 - 🚦 **限流友好**：全流程 MCP 调用次数为**个位数**
 
 ## 目标用户
@@ -161,7 +171,7 @@ setx MCD_MCP_TOKEN 你的Token          # Windows（需重开终端）
 ```bash
 git clone https://github.com/akexin/mcd-points-actuary.git
 cd mcd-points-actuary
-python -m unittest discover -s tests        # 114 项离线自检
+python -m unittest discover -s tests        # 118 项离线自检
 python scripts/run_unified_live.py --offline  # 无需 Token 复现全流程
 ```
 
@@ -180,34 +190,17 @@ python scripts/run_unified_live.py --store 1990346 --shadow-ypp 0   # 积分即�
 
 真实运行输出（2026-10-09，麦当劳南京新百餐厅 `1990346`）：
 
-```text
-[1/6] 已连接 mcd-mcp v1.0.0
-[2/6] 门店：麦当劳南京新百餐厅（storeCode=1990346）
-      到店菜单 124 项
-      外送菜单不可得（账号无配送地址 → 无 beCode）；麦乐送按到店价 + 配送费估算
-[3/6] 自有券（来自 MCP 实查）
-      query-store-coupons：原始 0 条 → 可量化 0 张
-      query-my-coupons：原始 0 条 → 可量化 0 张
-[4/6] 积分资产与积分商城
+![真实运行：渠道与券池 / 全网最低到手价](assets/screenshot-channels.png)
 
-① 积分定价
-  可定价 20 项（周期内 7 · 已过周期 13 · 无法定价 30）
-  周期内效率差 5.0 倍 —— 同样的积分，选错标的就差这么多
-  ➜ 影子价格 = 实测基准 0.1380 元/积分
+上图是**原样渲染**的真实 stdout —— ③ 列出各渠道费率与券数，④ 给出四个渠道的到手价对比。
+输出里处处留着可复核的诚实标注：`外送菜单不可得 … 按到店价估算`、
+`可领取 9 条（去重后 6 个名称）… 无法量化，故不参与计算`、
+以及末尾那句 `实际应付金额以下单页为准`。
 
-② 积分餐品券：生成 6 张带积分成本的券（映射表 + 精确同名两条路径）
-  打平 ypp 区间 0.0040 – 0.0580，全部低于影子价格 0.1380 → 全部"不划算"
-
-④ 全网最低到手价
-购物车：巨无霸 + 薯条 + 可乐
-美团外卖        ¥22.75  ¥3.50  ¥1.50  ¥27.75  0  ¥0.00  ¥27.75  半价周末·巨无霸5折 + 买薯条送可乐 + 必点榜减5
-饿了么          ¥34.44  ¥4.50  ¥1.00  ¥39.94  0  ¥0.00  ¥39.94  店铺满35减10 + 整单88折
-麦当劳·到店自取   ¥50.50  ¥0.00  ¥0.00  ¥50.50  0  ¥0.00  ¥50.50  无
-麦当劳·麦乐送     ¥50.50  ¥0.00  ¥0.00  ¥50.50  0  ¥0.00  ¥50.50  无
-选对渠道比最贵的省 ¥22.75
-
-本次联调共 7 次 MCP 调用（全部只读）
-```
+逐字原文与复现命令：[`docs/captures/unified-live.txt`](docs/captures/unified-live.txt)
+（74 行，由上表那条命令**原样重定向**得到）；配图由
+[`tools/make_readme_assets.py`](tools/make_readme_assets.py) 从该文件渲染 ——
+所以改一个数字，图就跟着变，不存在"图和代码对不上"的可能。
 
 ### 示例 B · 离线体验（不需要 Token）
 
@@ -256,6 +249,32 @@ python scripts/run_points_live.py --city 南京市 --keyword 新街口 --points 
   ⚠ 仍有 6 积分无法消耗，预计损失 ¥0.83
 ```
 
+## 自检（118 项，全离线）
+
+```bash
+python -m unittest discover -s tests -v
+```
+
+![全部测试通过：Ran 118 tests … OK](assets/screenshot-tests.png)
+
+| 测试文件 | 项数 | 盯住什么 |
+|---|---|---|
+| `test_channel_planner.py` | 39 | 券叠加口径、`bundle_price`、渠道比价、按净收益决定用不用积分券 |
+| `test_points_engine.py` | 47 | 价值矩阵、抽奖期望分层夹逼、止损背包、券名匹配回归 |
+| `test_unified_live.py` | 19 | 菜单归一化、券名**精确**解析、积分券生成判据、终端列宽对齐 |
+| `test_optimizer.py` | 13 | v1 点餐组合引擎 |
+
+几个刻意写成"回归哨兵"的用例：
+
+- `test_point_bundle_coupon_rejected_when_points_are_valuable` —— 抵扣 ¥12.10 的积分券
+  在影子价格 0.1380 下被判为**不该用**；影子价格取 0（积分即将过期）时同一张券又变为可用。
+  两种口径的分歧**就是结论本身**，所以必须锁死。
+- `test_unknown_name_dropped_not_guessed` —— 「巨无霸套餐」绝不能被近似匹配到「巨无霸」。
+  实测证明 v2 的 0.85 字面重合阈值挡不住这个错配（24 张餐品券里只有 1 张能通过
+  去价格前缀后的**完全同名**校验），因此阈值匹配被整体废弃。
+- `test_column_edges_line_up` —— 表格必须按**显示列宽**（汉字 2 列）补齐：
+  两行字段的右边界列号必须逐一相等。这条测试保护的正是上面那两张截图的整齐。
+
 ## 建模口径（显式声明，便于复核）
 
 券叠加在真实平台远比这复杂且会随时变，所以本项目只承诺：**在声明的口径下，结论可复算**。
@@ -300,11 +319,22 @@ mcd-points-actuary/
 │   └── sample_coupons.json           # 离线示例优惠券
 ├── tests/
 │   ├── test_channel_planner.py       # 39 项：券叠加 / 组合特价 / 渠道比价 / 积分成本
-│   ├── test_unified_live.py          # 15 项：菜单归一化 / 券名解析 / 积分券生成
+│   ├── test_unified_live.py          # 19 项：菜单归一化 / 券名解析 / 积分券生成 / 列宽对齐
 │   ├── test_points_engine.py         # 47 项：积分引擎 + 匹配回归
 │   └── test_optimizer.py             # 13 项：v1 点餐引擎
+├── docs/captures/
+│   ├── unified-live.txt              # ★ 真实运行 stdout 原样重定向（配图的数据源）
+│   └── tests-verbose.txt             # ★ 全部测试的原始输出
+├── tools/
+│   └── make_readme_assets.py         # 由 captures 渲染 README 配图（架构图 / 截图 / 测试图）
+├── assets/                           # 渲染产物（4 张 PNG，README 引用）
 └── LICENSE
 ```
+
+> `docs/captures/*.txt` 是配图的**唯一数据源**：先跑脚本重定向出文本，再由
+> `tools/make_readme_assets.py` 渲染成 PNG。图不是画出来的，是可复算的 ——
+> 这也是为什么截图里的表格列能对齐（渲染器逐字符摆放到固定列网格上，
+> 并对 SimHei 缺失的 `¥ ➜ ⚠ −` 自动走符号字体兜底）。
 
 ## 能力演进
 
@@ -314,7 +344,7 @@ mcd-points-actuary/
 |---|---|---|---|
 | **v1** | 怎么**买**最省？（组合剪枝 + MCP 精算） | `optimize_deals.py` | 已完成，13 项测试 |
 | **v2** | 怎么**花积分**最值？（价值矩阵 + 期望值边界） | `points_engine.py` | 已完成，47 项测试 |
-| **v3** | **在哪买、用哪张券、要不要动积分？** | `channel_planner.py` + `run_unified_live.py` | **当前主线**，54 项测试 |
+| **v3** | **在哪买、用哪张券、要不要动积分？** | `channel_planner.py` + `run_unified_live.py` | **当前主线**，58 项测试 |
 
 > 为什么一轮轮往前走？
 > v1 把"钱"算到极致 → 发现**钱之外的资产没人算**（积分会过期、多路径、价值差 13 倍）；

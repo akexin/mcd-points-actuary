@@ -172,7 +172,7 @@ mcd-points-actuary/
 │   ├── sample_lottery.json           # 抽奖活动与奖品池
 │   ├── sample_reference_prices.json  # 折扣券原价映射（菜单实查）
 │   └── sample_menu.json / sample_coupons.json
-└── tests/                            # 114 项离线单元测试
+└── tests/                            # 118 项离线单元测试
 ```
 
 ## 声明

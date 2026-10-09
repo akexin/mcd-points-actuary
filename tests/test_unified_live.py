@@ -21,8 +21,8 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "scripts"))
 
 from optimize_deals import Item, to_cents  # noqa: E402
 from run_unified_live import (  # noqa: E402
-    candidate_pool, load_channels, map_coupons, menu_items, points_coupons,
-    resolve_coupon_rows,
+    candidate_pool, dpad, dwidth, load_channels, map_coupons, menu_items,
+    points_coupons, resolve_coupon_rows,
 )
 
 DATA = os.path.join(os.path.dirname(__file__), "..", "data")
@@ -201,6 +201,50 @@ class TestCandidatePool(unittest.TestCase):
             point_bundle_coupon("P", "组合", ("1100", "9900008751"), to_cents(21.9), 800),))
         pool = candidate_pool(items, [ch])
         self.assertEqual(sorted(i.code for i in pool), ["1100", "9900008751"])
+
+
+class TestTerminalWidth(unittest.TestCase):
+    """表格按**显示列宽**补齐 —— 否则截图与终端里的列会逐行错位。
+
+    这里的断言直接盯住「对齐」这个可观测事实：同一列的右边界必须落在同一列号上。
+    """
+
+    def test_cjk_counts_as_two_columns(self):
+        self.assertEqual(dwidth("abc"), 3)
+        self.assertEqual(dwidth("巨无霸"), 6)
+        self.assertEqual(dwidth("17.9元板烧可乐组合"), 18)
+        self.assertEqual(dwidth("¥33.00"), 6)      # ¥ 是半角（U+00A5）
+        self.assertEqual(dwidth("（）"), 4)
+
+    def test_pad_reaches_exact_columns(self):
+        for s in ("abc", "巨无霸", "17.9元板烧可乐组合", ""):
+            for align in ("<", ">", "^"):
+                self.assertEqual(dwidth(dpad(s, 28, align)), 28)
+
+    def test_overlong_is_not_truncated(self):
+        long = "很长很长很长很长很长的名字"
+        self.assertEqual(dpad(long, 4), long)
+        self.assertGreaterEqual(dwidth(dpad(long, 4)), dwidth(long))
+
+    def test_column_edges_line_up(self):
+        """把积分券表的两行按同一套宽度拼出来，每个字段的右边界列号必须相同。"""
+        rows = [
+            ("17.9元板烧可乐组合", "500", "¥33.00", "¥17.90", "¥15.10"),
+            ("5.9元香芋派/菠萝派任选", "50", "¥8.50", "¥5.90", "¥2.60"),
+        ]
+        edges = []
+        for r in rows:
+            fields = [dpad(r[0], 28), dpad(r[1], 8, ">"), dpad(r[2], 10, ">"),
+                      dpad(r[3], 10, ">"), dpad(r[4], 9, ">")]
+            self.assertEqual([dwidth(f) for f in fields], [28, 8, 10, 10, 9])
+            acc, cuts = 0, []
+            for f in fields[:-1]:
+                acc += dwidth(f)
+                cuts.append(acc)
+            edges.append(cuts)
+        # 两行的列边界完全重合 → 目视对齐
+        self.assertEqual(edges[0], edges[1])
+        self.assertEqual(edges[0], [28, 36, 46, 56])
 
 
 if __name__ == "__main__":

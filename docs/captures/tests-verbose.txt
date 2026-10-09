@@ -1,0 +1,139 @@
+test_applied_before_order_level_coupon (test_channel_planner.TestBundlePrice.test_applied_before_order_level_coupon) ... ok
+test_breakeven_ypp (test_channel_planner.TestBundlePrice.test_breakeven_ypp) ... ok
+test_multi_item (test_channel_planner.TestBundlePrice.test_multi_item) ... ok
+test_no_discount_when_price_not_lower (test_channel_planner.TestBundlePrice.test_no_discount_when_price_not_lower) ... ok
+test_point_bundle_coupon_rejected_when_points_are_valuable (test_channel_planner.TestBundlePrice.test_point_bundle_coupon_rejected_when_points_are_valuable)
+积分券的抵扣再大，也可能因积分机会成本而**不该用** —— v3 的核心判据。 ... ok
+test_requires_every_listed_item (test_channel_planner.TestBundlePrice.test_requires_every_listed_item) ... ok
+test_single_item (test_channel_planner.TestBundlePrice.test_single_item) ... ok
+test_channel_gap (test_channel_planner.TestChannelComparison.test_channel_gap)
+渠道差价必须体现在报告用的汇总里。 ... ok
+test_compare_sorted_by_landed (test_channel_planner.TestChannelComparison.test_compare_sorted_by_landed) ... ok
+test_infeasible_sorted_last (test_channel_planner.TestChannelComparison.test_infeasible_sorted_last) ... ok
+test_delivery_and_packaging_added (test_channel_planner.TestChannelPricing.test_delivery_and_packaging_added) ... ok
+test_free_delivery_threshold (test_channel_planner.TestChannelPricing.test_free_delivery_threshold) ... ok
+test_landed_includes_point_opportunity_cost (test_channel_planner.TestChannelPricing.test_landed_includes_point_opportunity_cost)
+积分券的成本必须计入到手价，并按净收益决定用不用。 ... ok
+test_min_order_rejects (test_channel_planner.TestChannelPricing.test_min_order_rejects) ... ok
+test_price_factor (test_channel_planner.TestChannelPricing.test_price_factor) ... ok
+test_cross_group_stacks (test_channel_planner.TestCouponStacking.test_cross_group_stacks) ... ok
+test_discount_never_exceeds_goods (test_channel_planner.TestCouponStacking.test_discount_never_exceeds_goods) ... ok
+test_empty_combo (test_channel_planner.TestCouponStacking.test_empty_combo) ... ok
+test_group_is_mutually_exclusive (test_channel_planner.TestCouponStacking.test_group_is_mutually_exclusive) ... ok
+test_item_level_applies_before_order_level (test_channel_planner.TestCouponStacking.test_item_level_applies_before_order_level) ... ok
+test_max_stack_limits_order_level (test_channel_planner.TestCouponStacking.test_max_stack_limits_order_level) ... ok
+test_no_stack_matches_v1_semantics (test_channel_planner.TestCouponStacking.test_no_stack_matches_v1_semantics)
+allow_stack=False 时所有券同池竞争，只留一张 —— v1 语义必须原样保留。 ... ok
+test_budget_judged_on_landed_cost (test_channel_planner.TestCrossChannelOptimize.test_budget_judged_on_landed_cost)
+预算按**到手成本**判定（含渠道费），而不是券后商品价。 ... ok
+test_must_include_respected (test_channel_planner.TestCrossChannelOptimize.test_must_include_respected) ... ok
+test_no_feasible_plan (test_channel_planner.TestCrossChannelOptimize.test_no_feasible_plan) ... ok
+test_objective_cash_vs_landed (test_channel_planner.TestCrossChannelOptimize.test_objective_cash_vs_landed) ... ok
+test_discount_rate (test_channel_planner.TestNewCouponTypes.test_discount_rate) ... ok
+test_discount_with_cap (test_channel_planner.TestNewCouponTypes.test_discount_with_cap) ... ok
+test_discount_with_threshold (test_channel_planner.TestNewCouponTypes.test_discount_with_threshold) ... ok
+test_from_dict_reads_v3_fields (test_channel_planner.TestNewCouponTypes.test_from_dict_reads_v3_fields) ... ok
+test_item_discount_half_price (test_channel_planner.TestNewCouponTypes.test_item_discount_half_price) ... ok
+test_item_discount_requires_item (test_channel_planner.TestNewCouponTypes.test_item_discount_requires_item) ... ok
+test_min_items_gate (test_channel_planner.TestNewCouponTypes.test_min_items_gate) ... ok
+test_point_coupon_chosen_when_cheap (test_channel_planner.TestPointCostAwareSelection.test_point_coupon_chosen_when_cheap)
+积分很便宜（0.01 元/积分）时，500 积分机会成本仅 ¥5 < 抵扣 ¥24.5 → 应被选中。 ... ok
+test_point_coupon_not_chosen_when_costly (test_channel_planner.TestPointCostAwareSelection.test_point_coupon_not_chosen_when_costly)
+**回归用例**：影子价格 0.138 时，500 积分的机会成本是 ¥69， ... ok
+test_point_coupon_rejected_when_net_negative (test_channel_planner.TestPointCostAwareSelection.test_point_coupon_rejected_when_net_negative)
+净收益为负的券即便单独存在也不应被应用。 ... ok
+test_zero_shadow_falls_back_to_discount (test_channel_planner.TestPointCostAwareSelection.test_zero_shadow_falls_back_to_discount)
+影子价格为 0 = 把积分当免费 → 退化为纯抵扣额比较（v1 行为）。 ... ok
+test_channels_load (test_channel_planner.TestSampleData.test_channels_load) ... ok
+test_meituan_stack_beats_pickup (test_channel_planner.TestSampleData.test_meituan_stack_beats_pickup) ... ok
+test_budget_filter (test_optimizer.TestConstraints.test_budget_filter) ... ok
+test_calorie_cap (test_optimizer.TestConstraints.test_calorie_cap) ... ok
+test_exclude (test_optimizer.TestConstraints.test_exclude) ... ok
+test_infeasible_returns_empty (test_optimizer.TestConstraints.test_infeasible_returns_empty) ... ok
+test_must_include (test_optimizer.TestConstraints.test_must_include) ... ok
+test_sorted_ascending (test_optimizer.TestConstraints.test_sorted_ascending) ... ok
+test_buy_get_requires_both (test_optimizer.TestCouponEstimate.test_buy_get_requires_both) ... ok
+test_item_reduce (test_optimizer.TestCouponEstimate.test_item_reduce) ... ok
+test_picks_max_discount (test_optimizer.TestCouponEstimate.test_picks_max_discount) ... ok
+test_threshold_applies (test_optimizer.TestCouponEstimate.test_threshold_applies) ... ok
+test_saved_pct (test_optimizer.TestEvaluate.test_saved_pct) ... ok
+test_fmt (test_optimizer.TestMoney.test_fmt) ... ok
+test_to_cents (test_optimizer.TestMoney.test_to_cents) ... ok
+test_formatting (test_points_engine.TestAmountUtils.test_formatting) ... ok
+test_to_cents_accepts_yuan_forms (test_points_engine.TestAmountUtils.test_to_cents_accepts_yuan_forms) ... ok
+test_to_cents_rejects_bool (test_points_engine.TestAmountUtils.test_to_cents_rejects_bool) ... ok
+test_discount_needs_reference (test_points_engine.TestFaceValueParsing.test_discount_needs_reference) ... ok
+test_price_prefix (test_points_engine.TestFaceValueParsing.test_price_prefix) ... ok
+test_reduce_coupon (test_points_engine.TestFaceValueParsing.test_reduce_coupon) ... ok
+test_reference_fallback (test_points_engine.TestFaceValueParsing.test_reference_fallback) ... ok
+test_unknown (test_points_engine.TestFaceValueParsing.test_unknown) ... ok
+test_depends_with_breakeven_probability (test_points_engine.TestLotteryAnalysis.test_depends_with_breakeven_probability) ... ok
+test_dominated_when_max_below_required (test_points_engine.TestLotteryAnalysis.test_dominated_when_max_below_required) ... ok
+test_likely_when_uniform_passes_but_pessimistic_fails (test_points_engine.TestLotteryAnalysis.test_likely_when_uniform_passes_but_pessimistic_fails) ... ok
+test_points_prize_valued_at_opportunity_cost (test_points_engine.TestLotteryAnalysis.test_points_prize_valued_at_opportunity_cost)
+积分奖要按"这些积分本可换到的价值"折算，而不是按面值 0 处理。 ... ok
+test_robust_by_floor (test_points_engine.TestLotteryAnalysis.test_robust_by_floor) ... ok
+test_robust_by_pessimistic_expectation (test_points_engine.TestLotteryAnalysis.test_robust_by_pessimistic_expectation) ... ok
+test_unknown_when_nothing_priced (test_points_engine.TestLotteryAnalysis.test_unknown_when_nothing_priced) ... ok
+test_zero_benchmark (test_points_engine.TestLotteryAnalysis.test_zero_benchmark) ... ok
+test_ignores_zero_and_missing_prices (test_points_engine.TestMenuPriceMatching.test_ignores_zero_and_missing_prices) ... ok
+test_matches_short_name (test_points_engine.TestMenuPriceMatching.test_matches_short_name) ... ok
+test_matches_three_piece_combos (test_points_engine.TestMenuPriceMatching.test_matches_three_piece_combos) ... ok
+test_regression_activity_items_never_priced (test_points_engine.TestMenuPriceMatching.test_regression_activity_items_never_priced) ... ok
+test_regression_no_match_for_partial_overlap (test_points_engine.TestMenuPriceMatching.test_regression_no_match_for_partial_overlap) ... ok
+test_alternatives_are_distinct (test_points_engine.TestPlanBundles.test_alternatives_are_distinct) ... ok
+test_budget_too_small (test_points_engine.TestPlanBundles.test_budget_too_small) ... ok
+test_leftover_small_use (test_points_engine.TestPlanBundles.test_leftover_small_use) ... ok
+test_max_kinds_respected (test_points_engine.TestPlanBundles.test_max_kinds_respected) ... ok
+test_not_required_to_spend_exactly (test_points_engine.TestPlanBundles.test_not_required_to_spend_exactly)
+必须允许"不超预算"：精确用满会让 1500 积分因凑不出整额而直接无解。 ... ok
+test_picks_highest_value (test_points_engine.TestPlanBundles.test_picks_highest_value) ... ok
+test_unpriced_never_selected (test_points_engine.TestPlanBundles.test_unpriced_never_selected) ... ok
+test_zero_one_constraint (test_points_engine.TestPlanBundles.test_zero_one_constraint)
+同一个标的不能重复兑换 —— 否则 50 积分的高效券会被算法刷到离谱地步。 ... ok
+test_zero_or_negative (test_points_engine.TestPlanBundles.test_zero_or_negative) ... ok
+test_exchange_then_lottery (test_points_engine.TestPlanExpiry.test_exchange_then_lottery) ... ok
+test_loss_quantified (test_points_engine.TestPlanExpiry.test_loss_quantified) ... ok
+test_lottery_used_when_not_dominated (test_points_engine.TestPlanExpiry.test_lottery_used_when_not_dominated) ... ok
+test_zero_expiring (test_points_engine.TestPlanExpiry.test_zero_expiring) ... ok
+test_offer_from_raw (test_points_engine.TestRawConverters.test_offer_from_raw) ... ok
+test_prize_from_raw_coupon_with_refs (test_points_engine.TestRawConverters.test_prize_from_raw_coupon_with_refs) ... ok
+test_prize_from_raw_points (test_points_engine.TestRawConverters.test_prize_from_raw_points) ... ok
+test_active_spread_ignores_stale (test_points_engine.TestValueMatrix.test_active_spread_ignores_stale) ... ok
+test_benchmark_prefers_active_items (test_points_engine.TestValueMatrix.test_benchmark_prefers_active_items)
+基准必须取"周期内最优"——否则会把已结束活动的价格当成可用机会价值。 ... ok
+test_empty_offers (test_points_engine.TestValueMatrix.test_empty_offers) ... ok
+test_opportunity_cost (test_points_engine.TestValueMatrix.test_opportunity_cost) ... ok
+test_ranking_and_spread (test_points_engine.TestValueMatrix.test_ranking_and_spread) ... ok
+test_traps_detected (test_points_engine.TestValueMatrix.test_traps_detected) ... ok
+test_unpriced_excluded_from_ranking (test_points_engine.TestValueMatrix.test_unpriced_excluded_from_ranking) ... ok
+test_unredeemable_filtered (test_points_engine.TestValueMatrix.test_unredeemable_filtered) ... ok
+test_active_stale_preheat (test_points_engine.TestWindowState.test_active_stale_preheat) ... ok
+test_parse_time (test_points_engine.TestWindowState.test_parse_time) ... ok
+test_pool_is_coupon_related (test_unified_live.TestCandidatePool.test_pool_is_coupon_related) ... ok
+test_live_third_party_resolves_against_live_menu (test_unified_live.TestLoadChannels.test_live_third_party_resolves_against_live_menu)
+仓库里的 live_third_party.json 必须能被**实查菜单**完整解析。 ... ok
+test_threshold_reduce (test_unified_live.TestMapCoupons.test_threshold_reduce) ... ok
+test_unmappable_skipped (test_unified_live.TestMapCoupons.test_unmappable_skipped) ... ok
+test_empty_menu (test_unified_live.TestMenuItems.test_empty_menu) ... ok
+test_price_string_to_cents (test_unified_live.TestMenuItems.test_price_string_to_cents) ... ok
+test_zero_price_dropped (test_unified_live.TestMenuItems.test_zero_price_dropped) ... ok
+test_mapping_and_exact_name (test_unified_live.TestPointsCoupons.test_mapping_and_exact_name) ... ok
+test_no_mapping_file_only_exact_names (test_unified_live.TestPointsCoupons.test_no_mapping_file_only_exact_names) ... ok
+test_skips_zero_point_and_unknown_offer (test_unified_live.TestPointsCoupons.test_skips_zero_point_and_unknown_offer) ... ok
+test_buy_get_names_resolved (test_unified_live.TestResolveCouponRows.test_buy_get_names_resolved) ... ok
+test_item_name_resolved (test_unified_live.TestResolveCouponRows.test_item_name_resolved) ... ok
+test_item_names_resolved_for_bundle (test_unified_live.TestResolveCouponRows.test_item_names_resolved_for_bundle) ... ok
+test_unknown_code_dropped (test_unified_live.TestResolveCouponRows.test_unknown_code_dropped) ... ok
+test_unknown_name_dropped_not_guessed (test_unified_live.TestResolveCouponRows.test_unknown_name_dropped_not_guessed)
+「巨无霸套餐」不应被近似匹配到「巨无霸」—— 宁可丢弃。 ... ok
+test_cjk_counts_as_two_columns (test_unified_live.TestTerminalWidth.test_cjk_counts_as_two_columns) ... ok
+test_column_edges_line_up (test_unified_live.TestTerminalWidth.test_column_edges_line_up)
+把积分券表的两行按同一套宽度拼出来，每个字段的右边界列号必须相同。 ... ok
+test_overlong_is_not_truncated (test_unified_live.TestTerminalWidth.test_overlong_is_not_truncated) ... ok
+test_pad_reaches_exact_columns (test_unified_live.TestTerminalWidth.test_pad_reaches_exact_columns) ... ok
+
+----------------------------------------------------------------------
+Ran 118 tests in 0.049s
+
+OK
