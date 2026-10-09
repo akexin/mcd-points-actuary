@@ -1,0 +1,12 @@
+[
+  {"code": "BURGER-BIGMAC", "name": "巨无霸", "price": 24.5, "category": "汉堡", "calories": 550, "tags": ["招牌", "牛肉"]},
+  {"code": "BURGER-DOUBLE-CHEESE", "name": "双层吉士汉堡", "price": 15.0, "category": "汉堡", "calories": 450, "tags": ["牛肉"]},
+  {"code": "BURGER-MCFISH", "name": "麦香鱼", "price": 17.0, "category": "汉堡", "calories": 340, "tags": ["鱼"]},
+  {"code": "CHICKEN-MCNUGGETS-5", "name": "麦乐鸡（5块）", "price": 13.0, "category": "小食", "calories": 240, "tags": ["鸡肉"]},
+  {"code": "FRIES-M", "name": "中薯条", "price": 12.0, "category": "小食", "calories": 340, "tags": ["薯条"]},
+  {"code": "COLA-M", "name": "中杯可乐", "price": 9.5, "category": "饮品", "calories": 150, "tags": ["碳酸"]},
+  {"code": "SUNDAE", "name": "圣代", "price": 8.0, "category": "甜品", "calories": 200, "tags": ["冰品"]},
+  {"code": "COMBO-BIGMAC", "name": "巨无霸套餐（含中薯+中可）", "price": 35.0, "category": "套餐", "calories": 1040, "tags": ["套餐"]},
+  {"code": "BREAKFAST-MCMUFFIN", "name": "满福堡", "price": 12.0, "category": "早餐", "calories": 310, "tags": ["早餐"]},
+  {"code": "COFFEE-M", "name": "中杯鲜煮咖啡", "price": 12.5, "category": "饮品", "calories": 5, "tags": ["咖啡"]}
+]

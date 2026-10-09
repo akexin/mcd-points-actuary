@@ -1,0 +1,6 @@
+[
+  {"id": "C1", "name": "满30元减5元", "type": "threshold_reduce", "threshold": 30.0, "reduce": 5.0},
+  {"id": "C2", "name": "麦乐鸡（5块）立减4元", "type": "item_reduce", "item_code": "CHICKEN-MCNUGGETS-5", "reduce": 4.0},
+  {"id": "C3", "name": "买中薯条送中杯可乐", "type": "buy_get", "buy_code": "FRIES-M", "get_code": "COLA-M"},
+  {"id": "C4", "name": "圣代免费", "type": "item_free", "item_code": "SUNDAE"}
+]
