@@ -93,6 +93,7 @@ description: 麦麦积分精算师。基于麦当劳中国 MCP，把「渠道费
 python scripts/run_unified_live.py --city 南京市 --keyword 新街口
 python scripts/run_unified_live.py --store 1990346 --items 1100 4810 9900008751
 python scripts/run_unified_live.py --store 1990346 --shadow-ypp 0     # 积分即将过期
+python scripts/run_unified_live.py --record-shadow                    # 顺带把本次影子价格入档
 
 # 无 Token 也能复现全流程
 python scripts/run_unified_live.py --offline
@@ -102,18 +103,36 @@ python scripts/points_engine.py matrix  --products data/sample_points_products.j
 python scripts/points_engine.py lottery --lottery data/sample_lottery.json \
   --products data/sample_points_products.json --refs data/sample_reference_prices.json
 python scripts/run_points_live.py --city 南京市 --keyword 新街口 --points 1500 --expiring 800
+
+# v3.1 精算加固：四个"追问"各自的答案
+python scripts/shadow_price.py report                                  # 影子价格稳不稳？
+python scripts/expiry_policy.py --balance 1500 --expiry 2026-11-15     # 拖着不换行不行？
+python scripts/coupon_solver.py --items data/sample_menu.json \
+  --channels data/sample_channels.json --channel meituan \
+  --cart BURGER-BIGMAC BURGER-DOUBLE-CHEESE --shadow-ypp 0.138         # 券组合是约束问题
+python scripts/lottery_mc.py --lottery data/sample_lottery.json \
+  --products data/sample_points_products.json \
+  --refs data/sample_reference_prices.json --draws 33                  # "期望为正"≠"不会亏"
 ```
 
 ### 第 4 步 · 按引擎结论组织回答
 
-引擎给出五类结论，**照实转述，不要自行加戏**：
+引擎给出八类结论，**照实转述，不要自行加戏**：
 
 1. **影子价格**：先说清"1 积分值多少元"，这是后面所有比较的刻度。
+   **主口径是周期内最优标的效率（0.1380）**；若同时给出了保守分位或余额处边际效率，
+   要**并列说**、不能只挑一个 —— 三者不一致本身就是结论（"这个价只在特定条件下成立"）。
 2. **积分券打平线**：每张券的 `打平 ypp = 抵扣额 ÷ 积分消耗`，与基准比较后给"划算/不划算"。
 3. **渠道对比**：各渠道的「券后 / 配送 / 打包 / 现金 / 积分 / 到手成本」，以及**渠道差价**。
 4. **积分黑洞**：低于中位效率一半的标的 + 每个标的的机会成本金额。
 5. **抽奖判定**：`dominated` / `robust` / `likely` / `depends` 四档，**必须连同成立条件一起说**
-   （例如"即便永远抽不到最高奖也划算"）。
+   （例如"即便永远抽不到最高奖也划算"）。若跑过蒙特卡洛，**亏损概率必须一起说** ——
+   "期望为正"和"这一抽不会亏"是两回事（实测单次亏损概率可达 67.4%）。
+6. **有效兑换容量与死积分**：余额超过容量之后，多出来的积分换不出任何东西，
+   此时"最优标的效率"会高估到 100%。说结论时带上容量与死积分数量。
+7. **最晚开始日**：只对"有期限的兑换次数"有效；说了就要说清"再拖会少挽回多少"。
+8. **答案的可靠性等级**：`method=exact` 还是 `beam`？影子价格历史够不够？
+   样本不足时引擎会明说降级 —— **照抄那句降级说明，不要替它圆场**。
 
 ### 第 5 步 · 输出结论模板
 
@@ -159,6 +178,11 @@ mcd-points-actuary/
 ├── scripts/
 │   ├── channel_planner.py            # v3 跨渠道到手成本规划器（券叠加 / 组合特价 / 积分成本）
 │   ├── run_unified_live.py           # v3 统一端到端联调（点餐 ⊗ 第三方券 ⊗ 积分）
+│   ├── coupon_solver.py              # v3.1 券叠加约束求解（C1–C4 + 分支定界）
+│   ├── expiry_policy.py              # v3.1 跨期序贯策略（有效容量 / 边际效率 / 最晚开始日）
+│   ├── shadow_price.py               # v3.1 影子价格历史与保守分位
+│   ├── lottery_mc.py                 # v3.1 抽奖蒙特卡洛（四假设 + 解析解校验）
+│   ├── termtext.py                   # 终端显示列宽工具（全项目唯一实现）
 │   ├── points_engine.py              # v2 积分价值引擎（矩阵 / 抽奖 EV / 背包 / 止损）
 │   ├── run_points_live.py            # v2 端到端联调
 │   ├── optimize_deals.py             # v1 点餐组合引擎 + 统一券模型
@@ -167,12 +191,13 @@ mcd-points-actuary/
 ├── data/
 │   ├── live_third_party.json         # 第三方平台渠道与券（用户提供，按商品名声明）
 │   ├── sample_points_mapping.json    # 积分标的 → 菜单商品 人工核验映射
+│   ├── shadow_price_history.json     # 影子价格实测快照（按门店+日期去重）
 │   ├── sample_channels.json          # 渠道建模样例（离线演示）
 │   ├── sample_points_products.json   # 积分商城标的（真实数据脱敏）
 │   ├── sample_lottery.json           # 抽奖活动与奖品池
 │   ├── sample_reference_prices.json  # 折扣券原价映射（菜单实查）
 │   └── sample_menu.json / sample_coupons.json
-└── tests/                            # 118 项离线单元测试
+└── tests/                            # 243 项离线单元测试
 ```
 
 ## 声明

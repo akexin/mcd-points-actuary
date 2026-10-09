@@ -1,0 +1,15 @@
+{
+  "_note": "影子价格实测历史。每次 run_unified_live.py --record-shadow 追加一条（按 门店+日期 去重）。仅记录真实实测值，不编造。",
+  "snapshots": [
+    {
+      "date": "2026-10-10",
+      "best_ypp": 0.138,
+      "median_ypp": 0.0695,
+      "worst_ypp": 0.027375,
+      "active_offers": 7,
+      "priced_offers": 20,
+      "store_code": "1990346",
+      "source": "run_unified_live"
+    }
+  ]
+}

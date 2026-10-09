@@ -78,6 +78,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 DEFAULT_THIRD_PARTY = os.path.join(ROOT, "data", "live_third_party.json")
 DEFAULT_POINTS_MAP = os.path.join(ROOT, "data", "sample_points_mapping.json")
+DEFAULT_SHADOW_HISTORY = os.path.join(ROOT, "data", "shadow_price_history.json")
 OFFLINE_CHANNELS = os.path.join(ROOT, "data", "sample_channels.json")
 OFFLINE_MENU = os.path.join(ROOT, "data", "sample_menu.json")
 OFFLINE_OFFERS = os.path.join(ROOT, "data", "sample_points_products.json")
@@ -87,30 +88,17 @@ MCP_CALLS_NOTE = ("本次联调共 {n} 次 MCP 调用（全部只读）；"
 
 
 # --------------------------------------------------------------------------- #
-# 终端列宽
+# 终端表格
 # --------------------------------------------------------------------------- #
-def dwidth(s: str) -> int:
-    """字符串在等宽终端里占多少**列**（汉字/全角 2 列，其余 1 列）。
-
-    为什么不直接用 ``len()``：``f"{'巨无霸':<20}"`` 按**字符数**补空格，
-    而汉字占 2 列 —— 于是"巨无霸"只补了 17 个空格，看起来比 20 列短一截，
-    整张表的列就会逐行错位。本文件所有表格都改用 :func:`dpad` 按列宽补齐，
-    这样输出在真实终端里是**目视对齐**的，截图也就跟着对齐。
-    """
-    return sum(2 if unicodedata.east_asian_width(c) in ("W", "F") else 1 for c in s)
+#: 列宽工具已抽到 scripts/termtext.py（本项目唯一实现）。
+#: 这里保留同名转发，一是为了让老调用点与测试不必改 import，
+#: 二是为了把"为什么不能用 len() 补齐"这件事留在使用现场。
+from termtext import columns, dpad, dwidth, rule  # noqa: E402  (需在 sys.path 设置之后)
 
 
-def dpad(s: str, width: int, align: str = "<") -> str:
-    """按显示列宽补齐到 ``width`` 列；超宽则原样返回（不截断，宁可错位也不丢信息）。"""
-    gap = width - dwidth(s)
-    if gap <= 0:
-        return s
-    if align == ">":
-        return " " * gap + s
-    if align == "^":
-        left = gap // 2
-        return " " * left + s + " " * (gap - left)
-    return s + " " * gap
+def _dwidth_note() -> str:
+    """（仅作文档，不参与运行）``str.ljust`` 按字符数补齐，汉字占 2 列 → 表格会歪。"""
+    return "见 termtext.dwidth/docstring"
 
 
 # --------------------------------------------------------------------------- #
@@ -496,6 +484,11 @@ def main(argv: Optional[List[str]] = None) -> int:
     ap.add_argument("--shadow-ypp", type=float, default=None,
                     help="积分影子价格（元/积分）；缺省用积分商城实测基准。"
                          "积分即将过期时可传 0（视为沉没成本）")
+    ap.add_argument("--record-shadow", action="store_true",
+                    help="把本次实测的影子价格追加进历史快照，供 shadow_price.py "
+                         "算保守分位（同一门店同一天会覆盖，不会重复堆积）")
+    ap.add_argument("--shadow-history", default=DEFAULT_SHADOW_HISTORY,
+                    help="影子价格历史快照文件")
     ap.add_argument("--objective", choices=("landed", "cash"), default="landed")
     ap.add_argument("--items", nargs="+", default=None, help="指定购物车（商品编码）→ 对比模式")
     ap.add_argument("--min-items", type=int, default=1)
@@ -618,6 +611,21 @@ def main(argv: Optional[List[str]] = None) -> int:
     else:
         print(f"\n  ➜ 影子价格由 --shadow-ypp 指定为 {fmt_ypp(shadow_ypp)}"
               f"（实测基准 {fmt_ypp(measured_ypp)}）")
+
+    # 影子价格是**会变的**（商城上下架、限购轮换）。把每次实测入档，
+    # 历史攒够多期之后 shadow_price.py 才能给出保守分位；样本不足时它会明说"退化"。
+    if args.record_shadow:
+        from shadow_price import ShadowSeries, snapshot_from_matrix  # noqa: PLC0415
+
+        series = ShadowSeries.load(args.shadow_history)
+        snap = snapshot_from_matrix(matrix, store_code=str(store.get("storeCode") or ""))
+        added = series.append(snap)
+        series.save(args.shadow_history)
+        print(f"  ➜ 影子价格快照{'已追加' if added else '已覆盖同日'}：{snap.key()}"
+              f"（最优 {snap.best_ypp:.4f} / 中位 {snap.median_ypp:.4f}"
+              f" / 周期内 {snap.active_offers} 项）→ "
+              f"{os.path.relpath(args.shadow_history, ROOT)}")
+        report["shadow_snapshot"] = snap.to_dict()
 
     # ── 积分券 ────────────────────────────────────────────────────────── #
     by_code = {i.code: i for i in pickup_items}

@@ -47,8 +47,8 @@ from dataclasses import dataclass, field, replace
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
 
 from optimize_deals import (
-    Constraints, Coupon, Item, _prune_items, _satisfies, fmt_yuan, single_coupon_discount,
-    to_cents,
+    ITEM_LEVEL_TYPES, Constraints, Coupon, Item, _prune_items, _satisfies, fmt_yuan,
+    single_coupon_discount, to_cents,
 )
 
 DISCLAIMER = (
@@ -56,10 +56,11 @@ DISCLAIMER = (
     "第三方平台的券面与叠加规则会随时调整，实际应付金额以下单页为准。"
 )
 
-#: 单品级券型（作用于单件商品，先于整单级券应用）
-ITEM_LEVEL_TYPES = frozenset({"item_free", "item_reduce", "item_discount", "buy_get", "bundle_price"})
-
 SOURCE_TEXT = {"mcp": "麦当劳官方(实时)", "external": "第三方平台(用户提供)"}
+
+#: 券叠加求解引擎
+ENGINE_LEGACY = "legacy"          # v3 现行分步实现（已公布数字的来源）
+ENGINE_CONSTRAINT = "constraint"  # 通用约束求解器（额外保证商品池约束 C3）
 
 
 # --------------------------------------------------------------------------- #
@@ -229,6 +230,7 @@ def apply_coupons(
     allow_stack: bool = False,
     max_stack: int = 1,
     shadow_ypp: float = 0.0,
+    engine: str = ENGINE_LEGACY,
 ) -> CouponApplication:
     """求解购物车上的最优券应用方案。
 
@@ -237,7 +239,20 @@ def apply_coupons(
 
     ``shadow_ypp`` 给定时，带积分成本的券会按其**净收益**参与竞争；
     取 0 表示把积分当免费（此时退化为 v1 的纯抵扣额比较）。
+
+    ``engine`` 选择求解器：
+
+    - ``legacy``（默认）：本函数内的分步实现，**v3 已公布数字的来源**，保持不变。
+    - ``constraint``：交给 :mod:`coupon_solver` 的通用约束求解器。两者在
+      全部样例与线上券池上给出**逐分相同**的抵扣额（2548 用例 × 4 个影子价格
+      零差异，见 ``tests/test_coupon_solver.py``），但约束版额外保证
+      **每件商品被抵扣的总额不超过其标价**，并给出逐券归因与剪枝统计。
     """
+    if engine == ENGINE_CONSTRAINT:
+        return apply_coupons_constraint(
+            combo, coupons, allow_stack=allow_stack,
+            max_stack=max_stack, shadow_ypp=shadow_ypp)
+
     goods = sum(i.price_cents for i in combo)
     if not combo or goods <= 0 or not coupons:
         return CouponApplication(goods_cents=goods, payable_cents=max(0, goods))
@@ -284,6 +299,36 @@ def apply_coupons(
         payable_cents=goods - item_total - order_total,
         item_level_cents=item_total,
         order_level_cents=order_total,
+    )
+
+
+def apply_coupons_constraint(
+    combo: List[Item],
+    coupons: Sequence[Coupon],
+    *,
+    allow_stack: bool = False,
+    max_stack: int = 1,
+    shadow_ypp: float = 0.0,
+    order_mode: str = "middle",
+) -> CouponApplication:
+    """用**通用约束求解器**（:mod:`coupon_solver`）求解，返回同一套 ``CouponApplication``。
+
+    这一层只是适配器：把 ``SolveResult`` 映射回渠道层的数据结构，
+    好让 ``price_in_channel`` / ``compare_channels`` 一行不用改就能换引擎。
+    延迟导入避免与 ``coupon_solver`` 形成模块级循环。
+    """
+    from coupon_solver import solve  # noqa: PLC0415
+
+    r = solve(combo, coupons, allow_stack=allow_stack, max_stack=max_stack,
+              shadow_ypp=shadow_ypp, order_mode=order_mode)
+    return CouponApplication(
+        coupons=list(r.coupons),
+        discount_cents=r.discount_cents,
+        point_cost=r.point_cost,
+        goods_cents=r.goods_cents,
+        payable_cents=r.payable_cents,
+        item_level_cents=r.item_level_cents,
+        order_level_cents=r.order_level_cents,
     )
 
 

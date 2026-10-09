@@ -149,6 +149,12 @@ class Coupon:
         )
 
 
+#: 单品级券型：作用于**单件商品或指定组合**，先于整单级券落地。
+#: 放在这里而不是渠道层，是因为它属于"券的语义"本身 —— 券语义的唯一实现是本模块，
+#: ``channel_planner`` 与 ``coupon_solver`` 都从这里取，避免两处各写一份导致漂移。
+ITEM_LEVEL_TYPES = frozenset({"item_free", "item_reduce", "item_discount", "buy_get", "bundle_price"})
+
+
 @dataclass
 class Constraints:
     budget_cents: Optional[int] = None

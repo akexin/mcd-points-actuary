@@ -46,6 +46,134 @@ test_zero_shadow_falls_back_to_discount (test_channel_planner.TestPointCostAware
 影子价格为 0 = 把积分当免费 → 退化为纯抵扣额比较（v1 行为）。 ... ok
 test_channels_load (test_channel_planner.TestSampleData.test_channels_load) ... ok
 test_meituan_stack_beats_pickup (test_channel_planner.TestSampleData.test_meituan_stack_beats_pickup) ... ok
+test_order_mode_sequential_is_not_worse_than_middle (test_coupon_solver.TestDeterminism.test_order_mode_sequential_is_not_worse_than_middle)
+更严格的口径只会给出 ≤ 的抵扣额（这本身就是敏感性分析要看的量）。 ... ok
+test_same_input_same_output (test_coupon_solver.TestDeterminism.test_same_input_same_output) ... ok
+test_to_dict_is_json_safe (test_coupon_solver.TestDeterminism.test_to_dict_is_json_safe) ... ok
+test_attribution_sums_to_total (test_coupon_solver.TestItemPoolConstraint.test_attribution_sums_to_total)
+逐券归因之和必须等于总抵扣 —— 瀑布图靠这个才可信。 ... ok
+test_bundle_price_allocated_proportionally (test_coupon_solver.TestItemPoolConstraint.test_bundle_price_allocated_proportionally)
+组合特价的让利要按各商品剩余额比例分摊，不能全记在一件上。 ... ok
+test_item_pool_no_double_count (test_coupon_solver.TestItemPoolConstraint.test_item_pool_no_double_count)
+最小反例：两张不同组的单品券都指向 A。 ... ok
+test_pool_used_never_exceeds_price (test_coupon_solver.TestItemPoolConstraint.test_pool_used_never_exceeds_price) ... ok
+test_default_engine_is_legacy (test_coupon_solver.TestParityWithLegacy.test_default_engine_is_legacy)
+默认引擎必须仍是 legacy —— 这样任何未显式指定引擎的旧调用都不受影响。 ... ok
+test_live_third_party_zero_diff (test_coupon_solver.TestParityWithLegacy.test_live_third_party_zero_diff) ... ok
+test_sample_channels_zero_diff (test_coupon_solver.TestParityWithLegacy.test_sample_channels_zero_diff) ... ok
+test_beam_fallback_is_reported (test_coupon_solver.TestPruning.test_beam_fallback_is_reported)
+搜索空间超限时退化为束搜索，并且**必须**在结果里声明。 ... ok
+test_pruning_does_not_change_result (test_coupon_solver.TestPruning.test_pruning_does_not_change_result)
+剪枝后的答案必须与暴力枚举完全一致（逐券集合与净收益都比）。 ... ok
+test_pruning_reduces_expansion_on_wide_pool (test_coupon_solver.TestPruning.test_pruning_reduces_expansion_on_wide_pool)
+券池足够宽时，剪枝要真的少展开状态（否则这个功能就是摆设）。 ... ok
+test_static_bound_is_admissible (test_coupon_solver.TestPruning.test_static_bound_is_admissible)
+分支定界用的上界绝不能低估 —— 否则会把最优解剪掉。 ... ok
+test_eligible_rejects_malformed (test_coupon_solver.TestStackingConstraints.test_eligible_rejects_malformed) ... ok
+test_group_mutual_exclusion (test_coupon_solver.TestStackingConstraints.test_group_mutual_exclusion)
+同一 stack_group 的三张满减券只能选一张。 ... ok
+test_max_stack_limits_order_level (test_coupon_solver.TestStackingConstraints.test_max_stack_limits_order_level)
+整单级券张数受 max_stack 限制，各占一个互斥组。 ... ok
+test_net_loss_coupon_never_used (test_coupon_solver.TestStackingConstraints.test_net_loss_coupon_never_used)
+净收益 ≤ 0 的券永不使用 —— 哪怕它的抵扣额看起来最大。 ... ok
+test_no_stack_matches_v1_semantics (test_coupon_solver.TestStackingConstraints.test_no_stack_matches_v1_semantics)
+allow_stack=False 时所有券同池竞争，只留净收益最大的一张。 ... ok
+test_point_coupon_used_when_points_cheap (test_coupon_solver.TestStackingConstraints.test_point_coupon_used_when_points_cheap) ... ok
+test_down_time_is_a_string_and_gets_parsed (test_expiry_policy.TestLotsFromOffers.test_down_time_is_a_string_and_gets_parsed)
+回归：``down_time`` 是字符串，直接与 date 比较会 TypeError。 ... ok
+test_past_window_excluded_when_only_active (test_expiry_policy.TestLotsFromOffers.test_past_window_excluded_when_only_active) ... ok
+test_throttle_is_explicit_not_invented (test_expiry_policy.TestLotsFromOffers.test_throttle_is_explicit_not_invented) ... ok
+test_unpriced_offers_skipped (test_expiry_policy.TestLotsFromOffers.test_unpriced_offers_skipped) ... ok
+test_degenerate_values_return_zero (test_expiry_policy.TestMaxQty.test_degenerate_values_return_zero) ... ok
+test_expired_balance_returns_zero (test_expiry_policy.TestMaxQty.test_expired_balance_returns_zero) ... ok
+test_past_window_returns_zero (test_expiry_policy.TestMaxQty.test_past_window_returns_zero) ... ok
+test_per_period_multiplies (test_expiry_policy.TestMaxQty.test_per_period_multiplies) ... ok
+test_period_truncation_rounds_up (test_expiry_policy.TestMaxQty.test_period_truncation_rounds_up) ... ok
+test_unlimited_when_period_zero (test_expiry_policy.TestMaxQty.test_unlimited_when_period_zero) ... ok
+test_ypp (test_expiry_policy.TestMaxQty.test_ypp) ... ok
+test_acting_later_salvages_less (test_expiry_policy.TestPlanSequence.test_acting_later_salvages_less)
+序贯视角的核心命题：拖到后面才动手，可挽回价值必然下降。 ... ok
+test_capacity_and_dead_point_add_up (test_expiry_policy.TestPlanSequence.test_capacity_and_dead_point_add_up) ... ok
+test_curve_is_prefix_average (test_expiry_policy.TestPlanSequence.test_curve_is_prefix_average) ... ok
+test_daily_rate (test_expiry_policy.TestPlanSequence.test_daily_rate) ... ok
+test_expired_balance (test_expiry_policy.TestPlanSequence.test_expired_balance) ... ok
+test_leftover_and_spent_add_up (test_expiry_policy.TestPlanSequence.test_leftover_and_spent_add_up) ... ok
+test_marginal_never_above_best_lot (test_expiry_policy.TestPlanSequence.test_marginal_never_above_best_lot) ... ok
+test_marginal_ypp_at_clamps (test_expiry_policy.TestPlanSequence.test_marginal_ypp_at_clamps) ... ok
+test_marginal_ypp_at_is_interval_average_not_point_diff (test_expiry_policy.TestPlanSequence.test_marginal_ypp_at_is_interval_average_not_point_diff)
+回归：单点差分在整数背包里是块状的，会给出 6.9 元/积分这种荒谬费率。 ... ok
+test_no_attribution_anomaly_on_real_pool (test_expiry_policy.TestPlanSequence.test_no_attribution_anomaly_on_real_pool) ... ok
+test_no_usable_lots (test_expiry_policy.TestPlanSequence.test_no_usable_lots) ... ok
+test_repeat_is_deterministic (test_expiry_policy.TestPlanSequence.test_repeat_is_deterministic) ... ok
+test_saturated_balance_marginal_is_exactly_zero (test_expiry_policy.TestPlanSequence.test_saturated_balance_marginal_is_exactly_zero)
+容量被吃满 ⇒ 边际效率为 0。v3 的 0.1380 此时高估 100%，这是最极端的一档。 ... ok
+test_small_balance_marginal_equals_best_lot (test_expiry_policy.TestPlanSequence.test_small_balance_marginal_equals_best_lot) ... ok
+test_start_by_is_within_window (test_expiry_policy.TestPlanSequence.test_start_by_is_within_window) ... ok
+test_to_dict_is_json_ready (test_expiry_policy.TestPlanSequence.test_to_dict_is_json_ready) ... ok
+test_zero_balance (test_expiry_policy.TestPlanSequence.test_zero_balance) ... ok
+test_columns_line_up (test_expiry_policy.TestPrintSequence.test_columns_line_up)
+表格必须按**显示宽度**对齐（中文占两列），不是按字符数。 ... ok
+test_empty_plan_does_not_crash (test_expiry_policy.TestPrintSequence.test_empty_plan_does_not_crash)
+余额买不起池子里最小的一份 ⇒ picks 为空，走的是纯 notes 分支。 ... ok
+test_normal_plan_prints_every_section (test_expiry_policy.TestPrintSequence.test_normal_plan_prints_every_section) ... ok
+test_truly_unusable_pool_does_not_crash (test_expiry_policy.TestPrintSequence.test_truly_unusable_pool_does_not_crash) ... ok
+test_zero_balance_does_not_crash (test_expiry_policy.TestPrintSequence.test_zero_balance_does_not_crash) ... ok
+test_best_lot_matches_published_benchmark (test_expiry_policy.TestShippedData.test_best_lot_matches_published_benchmark) ... ok
+test_large_balance_is_over_estimated (test_expiry_policy.TestShippedData.test_large_balance_is_over_estimated) ... ok
+test_pool_is_non_empty (test_expiry_policy.TestShippedData.test_pool_is_non_empty) ... ok
+test_aggregates_by_identity_not_name (test_expiry_policy.TestSolvePicks.test_aggregates_by_identity_not_name)
+同名但积分档位不同的标的必须保持为两项 —— 商城实测就存在这种。 ... ok
+test_matches_brute_force_on_random_cases (test_expiry_policy.TestSolvePicks.test_matches_brute_force_on_random_cases) ... ok
+test_no_lots (test_expiry_policy.TestSolvePicks.test_no_lots) ... ok
+test_picks_sorted_by_efficiency (test_expiry_policy.TestSolvePicks.test_picks_sorted_by_efficiency) ... ok
+test_reconstruction_is_self_consistent (test_expiry_policy.TestSolvePicks.test_reconstruction_is_self_consistent) ... ok
+test_respects_max_qty (test_expiry_policy.TestSolvePicks.test_respects_max_qty) ... ok
+test_zero_balance (test_expiry_policy.TestSolvePicks.test_zero_balance) ... ok
+test_empty_lots_all_zero (test_expiry_policy.TestValueTable.test_empty_lots_all_zero) ... ok
+test_monotone_non_decreasing (test_expiry_policy.TestValueTable.test_monotone_non_decreasing) ... ok
+test_random_cases_match_brute_force (test_expiry_policy.TestValueTable.test_random_cases_match_brute_force) ... ok
+test_three_real_lots_matches_brute_force (test_expiry_policy.TestValueTable.test_three_real_lots_matches_brute_force) ... ok
+test_time_truncation_lowers_value (test_expiry_policy.TestValueTable.test_time_truncation_lowers_value)
+到期日把「每期限换次数」截断 ⇒ 可挽回值下降。这就是时间价值的算法来源。 ... ok
+test_assumptions_without_analytic_solution_leave_gap_none (test_lottery_mc.TestAnalyticCrossCheck.test_assumptions_without_analytic_solution_leave_gap_none) ... ok
+test_dominated_pool_loses_almost_surely (test_lottery_mc.TestAnalyticCrossCheck.test_dominated_pool_loses_almost_surely)
+奖池最高值 < 打平线 → 亏损概率必须是 1.0（必亏）。 ... ok
+test_pessimistic_mean_matches_expected_pessimistic (test_lottery_mc.TestAnalyticCrossCheck.test_pessimistic_mean_matches_expected_pessimistic) ... ok
+test_two_value_pool_loss_prob_is_exactly_half (test_lottery_mc.TestAnalyticCrossCheck.test_two_value_pool_loss_prob_is_exactly_half)
+{¥1, ¥5} 等概率、打平 ¥3 → 亏损概率 50%（走大数定律，容差给足）。 ... ok
+test_uniform_mean_matches_expected_if_uniform (test_lottery_mc.TestAnalyticCrossCheck.test_uniform_mean_matches_expected_if_uniform) ... ok
+test_histogram_counts_sum_to_trials (test_lottery_mc.TestDistribution.test_histogram_counts_sum_to_trials) ... ok
+test_more_draws_lowers_loss_probability (test_lottery_mc.TestDistribution.test_more_draws_lowers_loss_probability)
+多次抽奖的分散效应：合计亏损概率应随次数下降（本例期望为正）。 ... ok
+test_percentiles_are_monotone (test_lottery_mc.TestDistribution.test_percentiles_are_monotone) ... ok
+test_total_mean_scales_with_draws (test_lottery_mc.TestDistribution.test_total_mean_scales_with_draws) ... ok
+test_value_per_point_is_a_ypp (test_lottery_mc.TestDistribution.test_value_per_point_is_a_ypp)
+实测口径的「每积分换回多少元」要能直接与影子价格比。 ... ok
+test_different_seed_still_converges (test_lottery_mc.TestReproducibility.test_different_seed_still_converges) ... ok
+test_invalid_arguments_rejected (test_lottery_mc.TestReproducibility.test_invalid_arguments_rejected) ... ok
+test_same_seed_same_result (test_lottery_mc.TestReproducibility.test_same_seed_same_result) ... ok
+test_real_lottery_pool_parses (test_lottery_mc.TestShippedData.test_real_lottery_pool_parses) ... ok
+test_real_pool_stress_runs (test_lottery_mc.TestShippedData.test_real_pool_stress_runs) ... ok
+test_covers_all_assumptions (test_lottery_mc.TestStressTest.test_covers_all_assumptions) ... ok
+test_defaults_are_stable (test_lottery_mc.TestStressTest.test_defaults_are_stable) ... ok
+test_depends_when_assumptions_disagree (test_lottery_mc.TestStressTest.test_depends_when_assumptions_disagree) ... ok
+test_empty_pool_is_handled (test_lottery_mc.TestStressTest.test_empty_pool_is_handled) ... ok
+test_loss_prob_interval_is_ordered (test_lottery_mc.TestStressTest.test_loss_prob_interval_is_ordered) ... ok
+test_robust_lose_when_even_best_case_loses (test_lottery_mc.TestStressTest.test_robust_lose_when_even_best_case_loses)
+高打平线的奖池：连最有利假设都大概率亏 → robust_lose。 ... ok
+test_robust_win_when_even_worst_case_is_safe (test_lottery_mc.TestStressTest.test_robust_win_when_even_worst_case_is_safe)
+低打平线的奖池：连最不利假设都大概率不亏 → robust_win。 ... ok
+test_to_dict_json_safe (test_lottery_mc.TestStressTest.test_to_dict_json_safe) ... ok
+test_long_tail_is_decreasing (test_lottery_mc.TestWeights.test_long_tail_is_decreasing) ... ok
+test_optimistic_is_increasing (test_lottery_mc.TestWeights.test_optimistic_is_increasing) ... ok
+test_pessimistic_single_highest_prize_removed_from_value (test_lottery_mc.TestWeights.test_pessimistic_single_highest_prize_removed_from_value)
+两值奖池：pessimistic 的均值应恰为**低**的那一项。 ... ok
+test_pessimistic_zeroes_exactly_one_max (test_lottery_mc.TestWeights.test_pessimistic_zeroes_exactly_one_max)
+必须只置零**一个**最高值 —— 与解析口径 values[:-1] 严格一致。 ... ok
+test_single_prize_pool_falls_back_to_uniform (test_lottery_mc.TestWeights.test_single_prize_pool_falls_back_to_uniform)
+退化输入：只有一项奖品时，pessimistic 会把唯一权重置零。 ... ok
+test_uniform_weights_equal (test_lottery_mc.TestWeights.test_uniform_weights_equal) ... ok
+test_unknown_assumption_raises (test_lottery_mc.TestWeights.test_unknown_assumption_raises) ... ok
 test_budget_filter (test_optimizer.TestConstraints.test_budget_filter) ... ok
 test_calorie_cap (test_optimizer.TestConstraints.test_calorie_cap) ... ok
 test_exclude (test_optimizer.TestConstraints.test_exclude) ... ok
@@ -110,6 +238,36 @@ test_unpriced_excluded_from_ranking (test_points_engine.TestValueMatrix.test_unp
 test_unredeemable_filtered (test_points_engine.TestValueMatrix.test_unredeemable_filtered) ... ok
 test_active_stale_preheat (test_points_engine.TestWindowState.test_active_stale_preheat) ... ok
 test_parse_time (test_points_engine.TestWindowState.test_parse_time) ... ok
+test_clamp_is_reported_on_steep_drop (test_shadow_price.TestEstimate.test_clamp_is_reported_on_steep_drop) ... ok
+test_conservative_is_p25_of_window (test_shadow_price.TestEstimate.test_conservative_is_p25_of_window) ... ok
+test_conservative_never_above_point (test_shadow_price.TestEstimate.test_conservative_never_above_point)
+保守值**永远不高于**今天实测的最优效率。 ... ok
+test_degraded_when_insufficient_samples (test_shadow_price.TestEstimate.test_degraded_when_insufficient_samples)
+最关键的一条：只有 1–2 次实测时，不许编造分位数。 ... ok
+test_degraded_with_two_samples_too (test_shadow_price.TestEstimate.test_degraded_with_two_samples_too) ... ok
+test_empty_series (test_shadow_price.TestEstimate.test_empty_series) ... ok
+test_mode_labels_exist (test_shadow_price.TestEstimate.test_mode_labels_exist) ... ok
+test_p25_kept_when_market_is_flat_or_rising (test_shadow_price.TestEstimate.test_p25_kept_when_market_is_flat_or_rising) ... ok
+test_range_and_spread (test_shadow_price.TestEstimate.test_range_and_spread) ... ok
+test_to_dict_json_safe (test_shadow_price.TestEstimate.test_to_dict_json_safe) ... ok
+test_value_dispatch (test_shadow_price.TestEstimate.test_value_dispatch) ... ok
+test_window_limits_samples (test_shadow_price.TestEstimate.test_window_limits_samples) ... ok
+test_append_dedupes_same_day_same_store (test_shadow_price.TestSeries.test_append_dedupes_same_day_same_store) ... ok
+test_different_store_or_day_both_kept (test_shadow_price.TestSeries.test_different_store_or_day_both_kept) ... ok
+test_load_accepts_bare_list (test_shadow_price.TestSeries.test_load_accepts_bare_list) ... ok
+test_load_missing_file_is_empty (test_shadow_price.TestSeries.test_load_missing_file_is_empty) ... ok
+test_save_load_roundtrip (test_shadow_price.TestSeries.test_save_load_roundtrip) ... ok
+test_sorted_is_chronological (test_shadow_price.TestSeries.test_sorted_is_chronological) ... ok
+test_real_history_matches_published_number (test_shadow_price.TestShippedHistory.test_real_history_matches_published_number) ... ok
+test_real_history_records_active_count (test_shadow_price.TestShippedHistory.test_real_history_records_active_count) ... ok
+test_roundtrip_dict (test_shadow_price.TestSnapshot.test_roundtrip_dict) ... ok
+test_snapshot_falls_back_to_ranked_when_no_active (test_shadow_price.TestSnapshot.test_snapshot_falls_back_to_ranked_when_no_active) ... ok
+test_snapshot_from_matrix_uses_active_window (test_shadow_price.TestSnapshot.test_snapshot_from_matrix_uses_active_window)
+主口径取**周期内**（active）最优；全库最差只作参考。 ... ok
+test_median_matches_quantile_half (test_shadow_price.TestStatistics.test_median_matches_quantile_half) ... ok
+test_quantile_degenerate_inputs (test_shadow_price.TestStatistics.test_quantile_degenerate_inputs) ... ok
+test_quantile_linear_interpolation (test_shadow_price.TestStatistics.test_quantile_linear_interpolation) ... ok
+test_slope_sign (test_shadow_price.TestStatistics.test_slope_sign) ... ok
 test_pool_is_coupon_related (test_unified_live.TestCandidatePool.test_pool_is_coupon_related) ... ok
 test_live_third_party_resolves_against_live_menu (test_unified_live.TestLoadChannels.test_live_third_party_resolves_against_live_menu)
 仓库里的 live_third_party.json 必须能被**实查菜单**完整解析。 ... ok
@@ -134,6 +292,6 @@ test_overlong_is_not_truncated (test_unified_live.TestTerminalWidth.test_overlon
 test_pad_reaches_exact_columns (test_unified_live.TestTerminalWidth.test_pad_reaches_exact_columns) ... ok
 
 ----------------------------------------------------------------------
-Ran 118 tests in 0.049s
+Ran 243 tests in 1.539s
 
 OK
