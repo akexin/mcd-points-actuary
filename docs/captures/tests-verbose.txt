@@ -426,6 +426,111 @@ test_unpriced_excluded_from_ranking (test_points_engine.TestValueMatrix.test_unp
 test_unredeemable_filtered (test_points_engine.TestValueMatrix.test_unredeemable_filtered) ... ok
 test_active_stale_preheat (test_points_engine.TestWindowState.test_active_stale_preheat) ... ok
 test_parse_time (test_points_engine.TestWindowState.test_parse_time) ... ok
+test_batch_from_coupon_file (test_rule_parser.TestCli.test_batch_from_coupon_file) ... ok
+test_batch_without_menu (test_rule_parser.TestCli.test_batch_without_menu) ... ok
+test_explain_lists_every_evidence_line (test_rule_parser.TestCli.test_explain_lists_every_evidence_line) ... ok
+test_json_mode (test_rule_parser.TestCli.test_json_mode) ... ok
+test_missing_input_is_a_usage_error (test_rule_parser.TestCli.test_missing_input_is_a_usage_error) ... ok
+test_rejections_are_listed_with_reasons (test_rule_parser.TestCli.test_rejections_are_listed_with_reasons) ... ok
+test_single_text (test_rule_parser.TestCli.test_single_text) ... ok
+test_threshold_flag (test_rule_parser.TestCli.test_threshold_flag) ... ok
+test_boundary_is_inclusive (test_rule_parser.TestConfidenceGate.test_boundary_is_inclusive) ... ok
+test_confidence_never_exceeds_one (test_rule_parser.TestConfidenceGate.test_confidence_never_exceeds_one) ... ok
+test_low_confidence_clears_fields (test_rule_parser.TestConfidenceGate.test_low_confidence_clears_fields) ... ok
+test_reason_does_not_mislead_when_blocker_is_not_a_field (test_rule_parser.TestConfidenceGate.test_reason_does_not_mislead_when_blocker_is_not_a_field) ... ok
+test_rejection_reason_is_actionable (test_rule_parser.TestConfidenceGate.test_rejection_reason_is_actionable) ... ok
+test_scope_restriction_bites_hard (test_rule_parser.TestConfidenceGate.test_scope_restriction_bites_hard) ... ok
+test_threshold_is_a_real_knob (test_rule_parser.TestConfidenceGate.test_threshold_is_a_real_knob) ... ok
+test_zero_threshold_accepts_everything_parseable (test_rule_parser.TestConfidenceGate.test_zero_threshold_accepts_everything_parseable) ... ok
+test_conflicting_statements_are_rejected (test_rule_parser.TestDiscountPatterns.test_conflicting_statements_are_rejected) ... ok
+test_corroborating_statements_raise_confidence (test_rule_parser.TestDiscountPatterns.test_corroborating_statements_raise_confidence) ... ok
+test_item_discount_when_item_is_identifiable (test_rule_parser.TestDiscountPatterns.test_item_discount_when_item_is_identifiable) ... ok
+test_no_menu_never_invents_an_item_code (test_rule_parser.TestDiscountPatterns.test_no_menu_never_invents_an_item_code) ... ok
+test_order_discount_when_declared (test_rule_parser.TestDiscountPatterns.test_order_discount_when_declared) ... ok
+test_rate_is_always_present (test_rule_parser.TestDiscountPatterns.test_rate_is_always_present) ... ok
+test_uncapped_discount_is_penalised (test_rule_parser.TestDiscountPatterns.test_uncapped_discount_is_penalised) ... ok
+test_unknown_scope_is_penalised_not_guessed (test_rule_parser.TestDiscountPatterns.test_unknown_scope_is_penalised_not_guessed) ... ok
+test_every_score_line_is_traceable (test_rule_parser.TestExplanation.test_every_score_line_is_traceable) ... ok
+test_evidence_spans_point_into_the_original_text (test_rule_parser.TestExplanation.test_evidence_spans_point_into_the_original_text) ... ok
+test_outcome_type_is_stable (test_rule_parser.TestExplanation.test_outcome_type_is_stable) ... ok
+test_to_dict_is_json_serialisable (test_rule_parser.TestExplanation.test_to_dict_is_json_serialisable) ... ok
+test_bundle_codes_are_in_menu_order (test_rule_parser.TestItemPatterns.test_bundle_codes_are_in_menu_order) ... ok
+test_bundle_price (test_rule_parser.TestItemPatterns.test_bundle_price) ... ok
+test_bundle_with_one_known_item_is_capped (test_rule_parser.TestItemPatterns.test_bundle_with_one_known_item_is_capped) ... ok
+test_buy_get_resolves_both_codes (test_rule_parser.TestItemPatterns.test_buy_get_resolves_both_codes) ... ok
+test_item_free (test_rule_parser.TestItemPatterns.test_item_free) ... ok
+test_item_free_with_suffix_word (test_rule_parser.TestItemPatterns.test_item_free_with_suffix_word) ... ok
+test_item_reduce_resolves_code (test_rule_parser.TestItemPatterns.test_item_reduce_resolves_code) ... ok
+test_redeem_alt_form (test_rule_parser.TestItemPatterns.test_redeem_alt_form) ... ok
+test_redeem_carries_point_cost (test_rule_parser.TestItemPatterns.test_redeem_carries_point_cost) ... ok
+test_redeem_name_has_no_leading_separator (test_rule_parser.TestItemPatterns.test_redeem_name_has_no_leading_separator) ... ok
+test_alias (test_rule_parser.TestMenuIndex.test_alias) ... ok
+test_ambiguous_name_is_refused_not_guessed (test_rule_parser.TestMenuIndex.test_ambiguous_name_is_refused_not_guessed) ... ok
+test_empty_index_resolves_nothing (test_rule_parser.TestMenuIndex.test_empty_index_resolves_nothing) ... ok
+test_exact_code (test_rule_parser.TestMenuIndex.test_exact_code) ... ok
+test_exact_name_wins_before_containment (test_rule_parser.TestMenuIndex.test_exact_name_wins_before_containment) ... ok
+test_exact_name_with_fullwidth_parens (test_rule_parser.TestMenuIndex.test_exact_name_with_fullwidth_parens) ... ok
+test_unique_containment_resolves (test_rule_parser.TestMenuIndex.test_unique_containment_resolves) ... ok
+test_unknown_name (test_rule_parser.TestMenuIndex.test_unknown_name) ... ok
+test_item_reduce_keeps_name (test_rule_parser.TestNoMenuPath.test_item_reduce_keeps_name) ... ok
+test_missing_menu_does_not_penalise_shape_confidence (test_rule_parser.TestNoMenuPath.test_missing_menu_does_not_penalise_shape_confidence) ... ok
+test_names_are_kept_for_downstream_resolution (test_rule_parser.TestNoMenuPath.test_names_are_kept_for_downstream_resolution) ... ok
+test_pool_argument_is_equivalent_to_menu (test_rule_parser.TestNoMenuPath.test_pool_argument_is_equivalent_to_menu) ... ok
+test_arabic (test_rule_parser.TestNumberParsing.test_arabic) ... ok
+test_chinese_digits (test_rule_parser.TestNumberParsing.test_chinese_digits) ... ok
+test_digit_run_is_concatenated_not_added (test_rule_parser.TestNumberParsing.test_digit_run_is_concatenated_not_added) ... ok
+test_half (test_rule_parser.TestNumberParsing.test_half) ... ok
+test_half_price (test_rule_parser.TestNumberParsing.test_half_price) ... ok
+test_rate_accepts_trailing_zhe (test_rule_parser.TestNumberParsing.test_rate_accepts_trailing_zhe) ... ok
+test_rate_arabic_and_chinese_agree (test_rule_parser.TestNumberParsing.test_rate_arabic_and_chinese_agree) ... ok
+test_unit_after (test_rule_parser.TestNumberParsing.test_unit_after) ... ok
+test_unsupported_forms_raise_instead_of_guessing (test_rule_parser.TestNumberParsing.test_unsupported_forms_raise_instead_of_guessing) ... ok
+test_batch_splits_pass_and_reject (test_rule_parser.TestParseRows.test_batch_splits_pass_and_reject) ... ok
+test_explicit_fields_win_over_inference (test_rule_parser.TestParseRows.test_explicit_fields_win_over_inference) ... ok
+test_generated_ids_are_deterministic (test_rule_parser.TestParseRows.test_generated_ids_are_deterministic) ... ok
+test_non_dict_rows_are_skipped (test_rule_parser.TestParseRows.test_non_dict_rows_are_skipped) ... ok
+test_output_feeds_coupon_from_dict (test_rule_parser.TestParseRows.test_output_feeds_coupon_from_dict) ... ok
+test_records_carry_provenance (test_rule_parser.TestParseRows.test_records_carry_provenance) ... ok
+test_every_real_coupon_text_parses_above_the_gate (test_rule_parser.TestRoundTripAgainstShippedData.test_every_real_coupon_text_parses_above_the_gate) ... ok
+test_extracted_coupon_set_reproduces_the_engine_result (test_rule_parser.TestRoundTripAgainstShippedData.test_extracted_coupon_set_reproduces_the_engine_result)
+把解析出来的券丢进真实引擎，跑出来的抵扣必须与手工标注一致。 ... ok
+test_half_price_weekend_really_is_missing_its_cap (test_rule_parser.TestRoundTripAgainstShippedData.test_half_price_weekend_really_is_missing_its_cap)
+「半价周末·巨无霸 5折」里没有封顶，但结构化行写了 cap=15。 ... ok
+test_stated_fields_match_the_handwritten_rows (test_rule_parser.TestRoundTripAgainstShippedData.test_stated_fields_match_the_handwritten_rows) ... ok
+test_coupon_list_shape_is_accepted (test_rule_parser.TestShippedCouponTextFixture.test_coupon_list_shape_is_accepted) ... ok
+test_declared_expectations_hold (test_rule_parser.TestShippedCouponTextFixture.test_declared_expectations_hold) ... ok
+test_fixture_is_valid_json_with_a_reason_for_every_rejection (test_rule_parser.TestShippedCouponTextFixture.test_fixture_is_valid_json_with_a_reason_for_every_rejection) ... ok
+test_frequency_note_is_documented_as_passing (test_rule_parser.TestShippedCouponTextFixture.test_frequency_note_is_documented_as_passing) ... ok
+test_body_is_always_a_prefix_so_spans_stay_valid (test_rule_parser.TestSplitTail.test_body_is_always_a_prefix_so_spans_stay_valid) ... ok
+test_cap_is_not_a_tail_clause (test_rule_parser.TestSplitTail.test_cap_is_not_a_tail_clause) ... ok
+test_frequency_clause_is_cut (test_rule_parser.TestSplitTail.test_frequency_clause_is_cut) ... ok
+test_plain_text_untouched (test_rule_parser.TestSplitTail.test_plain_text_untouched) ... ok
+test_scope_bracket_is_cut (test_rule_parser.TestSplitTail.test_scope_bracket_is_cut) ... ok
+test_buy_one_get_one (test_rule_parser.TestStructuralRefusals.test_buy_one_get_one) ... ok
+test_empty_text (test_rule_parser.TestStructuralRefusals.test_empty_text) ... ok
+test_frequency_limit_is_a_note_not_a_refusal (test_rule_parser.TestStructuralRefusals.test_frequency_limit_is_a_note_not_a_refusal) ... ok
+test_item_count_threshold (test_rule_parser.TestStructuralRefusals.test_item_count_threshold) ... ok
+test_random_discount (test_rule_parser.TestStructuralRefusals.test_random_discount) ... ok
+test_refusal_survives_trailing_clause (test_rule_parser.TestStructuralRefusals.test_refusal_survives_trailing_clause) ... ok
+test_second_cup_half_price (test_rule_parser.TestStructuralRefusals.test_second_cup_half_price) ... ok
+test_single_use_per_order_gets_a_stack_hint (test_rule_parser.TestStructuralRefusals.test_single_use_per_order_gets_a_stack_hint) ... ok
+test_unknown_shape_is_reported_not_guessed (test_rule_parser.TestStructuralRefusals.test_unknown_shape_is_reported_not_guessed) ... ok
+test_free_order_is_not_stolen_by_item_reduce (test_rule_parser.TestThresholdReduce.test_free_order_is_not_stolen_by_item_reduce) ... ok
+test_no_threshold_means_zero (test_rule_parser.TestThresholdReduce.test_no_threshold_means_zero) ... ok
+test_threshold_above_reduce_is_flagged (test_rule_parser.TestThresholdReduce.test_threshold_above_reduce_is_flagged) ... ok
+test_with_units (test_rule_parser.TestThresholdReduce.test_with_units) ... ok
+test_without_units (test_rule_parser.TestThresholdReduce.test_without_units) ... ok
+test_bought_coupon_works_end_to_end (test_rule_parser.TestToCoupon.test_bought_coupon_works_end_to_end) ... ok
+test_builds_a_real_coupon (test_rule_parser.TestToCoupon.test_builds_a_real_coupon) ... ok
+test_discount_coupon_is_usable_by_the_engine (test_rule_parser.TestToCoupon.test_discount_coupon_is_usable_by_the_engine) ... ok
+test_refuses_to_build_from_a_rejected_parse (test_rule_parser.TestToCoupon.test_refuses_to_build_from_a_rejected_parse) ... ok
+test_refuses_to_build_from_low_confidence (test_rule_parser.TestToCoupon.test_refuses_to_build_from_low_confidence) ... ok
+test_cap_and_threshold_are_listed_when_absent (test_rule_parser.TestUnstatedFields.test_cap_and_threshold_are_listed_when_absent) ... ok
+test_cap_present_but_threshold_absent (test_rule_parser.TestUnstatedFields.test_cap_present_but_threshold_absent) ... ok
+test_stack_group_is_never_derivable_from_text (test_rule_parser.TestUnstatedFields.test_stack_group_is_never_derivable_from_text) ... ok
+test_threshold_reduce_has_no_cap_entry (test_rule_parser.TestUnstatedFields.test_threshold_reduce_has_no_cap_entry) ... ok
+test_unstated_threshold_really_changes_the_estimate (test_rule_parser.TestUnstatedFields.test_unstated_threshold_really_changes_the_estimate)
+这不是文案问题：discount 的 threshold 留 0 会让券变成"无条件可用"。 ... ok
 test_clamp_is_reported_on_steep_drop (test_shadow_price.TestEstimate.test_clamp_is_reported_on_steep_drop) ... ok
 test_conservative_is_p25_of_window (test_shadow_price.TestEstimate.test_conservative_is_p25_of_window) ... ok
 test_conservative_never_above_point (test_shadow_price.TestEstimate.test_conservative_never_above_point)
@@ -478,6 +583,14 @@ test_item_names_resolved_for_bundle (test_unified_live.TestResolveCouponRows.tes
 test_unknown_code_dropped (test_unified_live.TestResolveCouponRows.test_unknown_code_dropped) ... ok
 test_unknown_name_dropped_not_guessed (test_unified_live.TestResolveCouponRows.test_unknown_name_dropped_not_guessed)
 「巨无霸套餐」不应被近似匹配到「巨无霸」—— 宁可丢弃。 ... ok
+test_explicit_type_is_never_overridden (test_unified_live.TestResolveCouponRowsFromText.test_explicit_type_is_never_overridden)
+人工标注优先于文本推断 —— 优先级倒了会让"手抄对了"反而被改写。 ... ok
+test_item_name_is_landed_by_the_parser (test_unified_live.TestResolveCouponRowsFromText.test_item_name_is_landed_by_the_parser) ... ok
+test_low_confidence_row_is_dropped_with_a_reason (test_unified_live.TestResolveCouponRowsFromText.test_low_confidence_row_is_dropped_with_a_reason) ... ok
+test_parser_output_survives_coupon_from_dict (test_unified_live.TestResolveCouponRowsFromText.test_parser_output_survives_coupon_from_dict) ... ok
+test_stacking_hint_does_not_break_coupon_construction (test_unified_live.TestResolveCouponRowsFromText.test_stacking_hint_does_not_break_coupon_construction) ... ok
+test_structurally_unsupported_row_is_dropped (test_unified_live.TestResolveCouponRowsFromText.test_structurally_unsupported_row_is_dropped) ... ok
+test_threshold_row_from_text (test_unified_live.TestResolveCouponRowsFromText.test_threshold_row_from_text) ... ok
 test_cjk_counts_as_two_columns (test_unified_live.TestTerminalWidth.test_cjk_counts_as_two_columns) ... ok
 test_column_edges_line_up (test_unified_live.TestTerminalWidth.test_column_edges_line_up)
 把积分券表的两行按同一套宽度拼出来，每个字段的右边界列号必须相同。 ... ok
@@ -485,6 +598,6 @@ test_overlong_is_not_truncated (test_unified_live.TestTerminalWidth.test_overlon
 test_pad_reaches_exact_columns (test_unified_live.TestTerminalWidth.test_pad_reaches_exact_columns) ... ok
 
 ----------------------------------------------------------------------
-Ran 405 tests in 10.233s
+Ran 514 tests in 9.466s
 
 OK

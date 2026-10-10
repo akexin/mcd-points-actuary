@@ -51,6 +51,9 @@ description: 麦麦积分精算师。基于麦当劳中国 MCP，把「渠道费
    `data/live_third_party.json` 的格式提供；本方提供的是样例，不是实时数据。
 4. Python ≥ 3.10（仅用标准库，无第三方依赖）。用了 `@dataclass(slots=True)` 与
    `int.bit_count()`，两者都是 3.10 起才有。
+5. 券面**不必**先抄成结构化字段：v3.3 起 `scripts/rule_parser.py` 能直接读券面文本
+   （「满30元减5元」「半价周末·巨无霸 5折」…），但它的产出要过一道 0.75 置信度闸门
+   —— 过不了的券会被明确拒绝，不会带着猜测进入计算。
 
 ## 工作流
 
@@ -123,6 +126,11 @@ python scripts/mcp_cache.py stats                                      # 缓存�
 python scripts/mcp_cache.py ttl                                        # 每个工具的 TTL 及其依据
 python tools/bench.py                                                  # 微优化基准（含一条负面结论）
 
+# v3.3 券面文本 → 结构化约束（带 0.75 置信度闸门；退出码 = 未通过条数）
+python scripts/rule_parser.py --coupons data/sample_coupon_text.json --menu data/sample_menu.json
+python scripts/rule_parser.py --text "半价周末·巨无霸 5折" --menu data/sample_menu.json --explain
+python scripts/rule_parser.py --text "圣代免费" --json     # 机器可读：status / confidence / unstated
+
 # 缓存开关：默认开。要最新加 --refresh（回源但保留缓存），彻底不要加 --no-cache
 python scripts/run_unified_live.py --refresh
 ```
@@ -151,6 +159,11 @@ python scripts/run_unified_live.py --refresh
 10. **MCP 调用次数**：报告会分「逻辑取数」与「实际打到服务端」两个数。
     要转述时**两个一起说**，只报后者会让人以为是省了缓存命中，只报前者会掩盖真实请求数。
     数据可能不是此刻的，需要时提示用户加 `--refresh`。
+11. **券面解析的三种去向**：券行没有 `type` 时会先过解析层，结果只有三种 ——
+    **通过**（转成结构化约束）、**结构不支持**（模型装不下，如「第二杯半价」）、
+    **置信度不足**（不敢算，如「限部分门店」）。后两种的券**不参与计算**，
+    必须照实说明"这张券没算，以 App 下单页为准"，**不要自己补一个门槛/封顶让它能跑**。
+    另外，解析层登记在 `unstated` 里的字段（封顶 / 门槛 / 互斥组）**不要替它填**。
 
 ### 第 5 步 · 输出结论模板
 
@@ -194,6 +207,14 @@ python scripts/run_unified_live.py --refresh
 - **缓存有陈旧风险，是刻意的取舍**。券面/库存会中途变化，`TTL` 按工具分档
   （菜单 30 min / 门店 10 min / 券 5 min / 账户 1 min）；**失败与空载荷永不入缓存**。
   转述数据时若涉及"此刻是否还能用"，提示 `--refresh` 回源或 `--no-cache` 完全旁路。
+- **券面解析有 0.75 的置信度闸门，低于阈值时清空字段** —— 不是"输出一张低分券"，
+  而是"不输出券"。错的方向不对称：少一张券顶多错失优惠，读错一张券会给出**买不到**的价格。
+- **券面文本里没写的字段一律不推断**：封顶、门槛、`stack_group` 都不从文本"合理猜测"，
+  一律登记进 `unstated` 交给调用方。`discount` 的 `threshold_cents` 留 0 会让券变成
+  无条件可用（乐观偏差），所以这类缺口必须明说。
+- **人工标注优先级高于文本推断**：券行只要带 `type`，解析层完全不介入。
+- **解析层读不出平台策略的另一半**：互斥组与叠加策略、每人限领/限用次数、
+  "券面限部分门店时本店在不在名单内"——这三类都必须在**渠道配置**里由人声明。
 - 只输出建议，**兑换与下单必须由用户确认**。
 
 ## 目录结构
@@ -207,6 +228,7 @@ mcd-points-actuary/
 │   ├── coupon_solver.py              # v3.1 券叠加约束求解（C1–C4 + 分支定界）
 │   ├── combo_search.py               # v3.2 组合枚举可采纳下界剪枝（省 71~88%）
 │   ├── mcp_cache.py                  # v3.2 MCP 调用 TTL 缓存与预取（失败不入缓存）
+│   ├── rule_parser.py                # v3.3 券面文本 → 结构化约束（七券型 + 置信度闸门）
 │   ├── expiry_policy.py              # v3.1 跨期序贯策略（有效容量 / 边际效率 / 最晚开始日）
 │   ├── shadow_price.py               # v3.1 影子价格历史与保守分位
 │   ├── lottery_mc.py                 # v3.1 抽奖蒙特卡洛（四假设 + 解析解校验）
@@ -226,7 +248,8 @@ mcd-points-actuary/
 │   ├── sample_reference_prices.json  # 折扣券原价映射（菜单实查）
 │   └── sample_menu.json / sample_coupons.json
 ├── tools/bench.py                    # v3.2 微优化基准（组合数 / 剪枝 / 内存 / 位掩码）
-└── tests/                            # 405 项离线单元测试
+├── data/sample_coupon_text.json      # v3.3 券面原文样例（19 条，自带 _expected）
+└── tests/                            # 514 项离线单元测试
 ```
 
 ## 声明

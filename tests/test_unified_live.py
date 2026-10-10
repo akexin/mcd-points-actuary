@@ -103,6 +103,64 @@ class TestResolveCouponRows(unittest.TestCase):
         self.assertEqual(len(dropped), 1)
 
 
+class TestResolveCouponRowsFromText(unittest.TestCase):
+    """v3.3：没有 ``type`` 的券行按**券面文本**解析（评审项⑦）。"""
+
+    def setUp(self):
+        self.items = menu_items(MENU_RAW)
+        self.by_code = {i.code: i for i in self.items}
+        self.by_name = {i.name: i for i in self.items}
+
+    def _resolve(self, rows):
+        return resolve_coupon_rows(rows, self.by_code, self.by_name)
+
+    def test_threshold_row_from_text(self):
+        rows, dropped = self._resolve([{"id": "T1", "name": "满30元减5元"}])
+        self.assertEqual(dropped, [])
+        self.assertEqual(rows[0]["type"], "threshold_reduce")
+        self.assertEqual(rows[0]["threshold"], 30.0)
+        self.assertEqual(rows[0]["reduce"], 5.0)
+
+    def test_item_name_is_landed_by_the_parser(self):
+        rows, dropped = self._resolve([{"id": "T2", "name": "巨无霸立减4元"}])
+        self.assertEqual(dropped, [])
+        self.assertEqual(rows[0]["type"], "item_reduce")
+        self.assertEqual(rows[0]["item_code"], "1100")
+
+    def test_low_confidence_row_is_dropped_with_a_reason(self):
+        # 「限部分门店」= 券在不在本店未知 ⇒ 宁可不用，也不猜
+        rows, dropped = self._resolve([{"id": "T3", "name": "满30减5，限部分门店"}])
+        self.assertEqual(rows, [])
+        self.assertEqual(len(dropped), 1)
+        self.assertIn("券面解析未通过", dropped[0])
+        self.assertIn("置信度", dropped[0])
+
+    def test_structurally_unsupported_row_is_dropped(self):
+        rows, dropped = self._resolve([{"id": "T4", "name": "第二杯半价"}])
+        self.assertEqual(rows, [])
+        self.assertIn("结构不支持", dropped[0])
+
+    def test_explicit_type_is_never_overridden(self):
+        """人工标注优先于文本推断 —— 优先级倒了会让"手抄对了"反而被改写。"""
+        rows, _ = self._resolve([{"id": "T5", "name": "满30元减5元",
+                                  "type": "threshold_reduce",
+                                  "threshold": 99.0, "reduce": 1.0}])
+        self.assertEqual(rows[0]["threshold"], 99.0)
+        self.assertEqual(rows[0]["reduce"], 1.0)
+
+    def test_parser_output_survives_coupon_from_dict(self):
+        from optimize_deals import Coupon
+        rows, _ = self._resolve([{"id": "T6", "name": "满30元减5元"}])
+        c = Coupon.from_dict(rows[0])
+        self.assertEqual((c.id, c.threshold_cents, c.reduce_cents), ("T6", 3000, 500))
+
+    def test_stacking_hint_does_not_break_coupon_construction(self):
+        from optimize_deals import Coupon
+        rows, _ = self._resolve([{"id": "T7", "name": "买巨无霸送可乐 每单限用一张"}])
+        self.assertEqual(rows[0]["_stack_hint"], "single")
+        self.assertEqual(Coupon.from_dict(rows[0]).type, "buy_get")
+
+
 class TestLoadChannels(unittest.TestCase):
     def test_live_third_party_resolves_against_live_menu(self):
         """仓库里的 live_third_party.json 必须能被**实查菜单**完整解析。

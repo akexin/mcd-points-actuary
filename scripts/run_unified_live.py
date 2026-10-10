@@ -73,6 +73,7 @@ from points_engine import (  # noqa: E402
     WINDOW_ACTIVE, ValueMatrix, build_value_matrix, fmt_ypp, offer_from_raw,
     window_state,
 )
+from rule_parser import parse_rule  # noqa: E402
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
@@ -168,14 +169,31 @@ def resolve_coupon_rows(rows: Sequence[Any], by_code: Dict[str, Item],
     第三方平台券面是用户手抄的，记的多半是商品名（"半价周末·巨无霸"）而不是菜单编码。
     这里只接受**精确命中**（编码或全名）；命中不了就丢弃并把原因报回来，
     由人工补充 —— 与本项目"宁可漏，不可猜"的取舍一致。
+
+    v3.3 追加：行里**没有 ``type``** 时，先按**券面文本**过一遍 :mod:`rule_parser`
+    （评审项⑦：把硬编码券规则换成文本解析层）。解析不通过的直接丢弃并附上原因，
+    绝不"猜一个 type 让它能跑"。有 ``type`` 的行完全不走这条路 ——
+    人工标注优先于文本推断，这个优先级不能倒。
     """
     ok_rows: List[Dict[str, Any]] = []
     dropped: List[str] = []
+    pool = list(by_code.values())
     for raw in rows:
         if not isinstance(raw, dict):
             continue
         row = dict(raw)
         label = str(row.get("name") or row.get("id") or "?")
+
+        if not row.get("type"):
+            face = str(row.get("name") or row.get("title") or "")
+            outcome = parse_rule(face, pool=pool)
+            if not outcome.accepted:
+                dropped.append(f"{label}（无 type，券面解析未通过：{outcome.reason}）")
+                continue
+            # 解析层能落地的 item_code 直接用；落地不了的 item_name 交给下面的既有逻辑校验。
+            # 形如 ``_stack_hint`` 的下划线键是解析层的结构提示，Coupon.from_dict 会忽略。
+            row = {**row, **outcome.fields}
+            label = str(row.get("name") or row.get("id") or "?")
         bad: Optional[str] = None
 
         for key in ("item_code", "buy_code", "get_code"):

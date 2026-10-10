@@ -214,6 +214,19 @@ LIVE_CMD = ("MINGW64:/c/Users/Administrator/WorkBuddy/2026-10-09-14-55-25/mcd-po
             "   python scripts/run_unified_live.py --store 1990346 --items 1100 4810 9900008751")
 
 
+def render_rule_parse(path: str, out_path: str, title: str) -> tuple:
+    """渲染券面解析的表（到「19 条：通过 14」为止）。
+
+    只截到汇总行，**不截「未通过明细」**：那些拒绝理由单行就有 180+ 显示列，
+    放进图里会把整张图拉宽三倍，反而看不清表格本身。
+    """
+    lines = open(path, encoding="utf-8").read().splitlines()
+    while lines and not lines[-1].strip():
+        lines.pop()
+    end = next((i for i, ln in enumerate(lines) if ln.startswith("19 条：")), len(lines) - 1)
+    return render_terminal(lines[:end + 1], out_path, title, size=16, lh=24)
+
+
 def live_sections(path: str):
     """按 '====' 三行块切分运行输出，返回 {序号: (起, 止)}。
 
@@ -283,8 +296,8 @@ def render_architecture(out_path: str) -> tuple:
     g = 24
     cw = (inner - g * 2) // 3
 
-    c = Canvas(W, 648)
-    c.text(M, 26, "麦麦积分精算师 v3 · 统一到手成本引擎", 24, A_TITLE, bold=True)
+    c = Canvas(W, 768)
+    c.text(M, 26, "麦麦积分精算师 v3.3 · 统一到手成本引擎", 24, A_TITLE, bold=True)
     c.text(M, 62, "把「点餐组合 / 第三方平台券 / 积分机会成本」三层压到同一个目标函数上",
            14, A_MUTED)
 
@@ -297,11 +310,19 @@ def render_architecture(out_path: str) -> tuple:
     c.box(M + (cw + g) * 2, y1, cw, 78, "积分标的映射表",
           ["积分商城 SKU ≠ 菜单 SKU", "人工逐条核验，不猜"], A_DATA_BG, A_DATA_ED, A_DATA_TX)
 
+    # ② L-1 接入层：券面文本 → 结构化约束（评审项⑦）。它夹在"数据来源"与"本地求解"之间，
+    # 因为它的职责就是**卡在入口** —— 转化不了的券不放行，而不是带着猜测往下走。
     mid = M + inner / 2
-    y2 = 258
+    yp = 240
     for i in range(3):
-        c.elbow(M + cw / 2 + i * (cw + g), y1 + 78, mid, y2 - 34, y2 - 18)
-    c.text(M, y2 - 24, "② 本地求解（零网络 · 不占 MCP 配额）", 13, A_MUTED)
+        c.elbow(M + cw / 2 + i * (cw + g), y1 + 78, mid, yp - 34, yp - 18)
+    c.text(M, yp - 24, "② L-1 接入层（本地 · 零网络）", 13, A_MUTED)
+    c.band(M, yp, inner, 62,
+           "rule_parser.py：券面文本 → 结构化约束 ｜ 置信度 < 0.75 ⇒ 不产出券", 17)
+
+    y2 = 372
+    c.text(M, y2 - 24, "③ 本地求解（零网络 · 不占 MCP 配额）", 13, A_MUTED)
+    c.varrow(mid, yp + 62, y2 - 18)
     c.box(M, y2, cw, 78, "optimize_deals.py",
           ["统一券模型 · 7 种券型", "券语义的唯一实现"], A_ENG_BG, A_ENG_ED, A_ENG_TX)
     c.box(M + cw + g, y2, cw, 78, "points_engine.py",
@@ -309,13 +330,13 @@ def render_architecture(out_path: str) -> tuple:
     c.box(M + (cw + g) * 2, y2, cw, 78, "channel_planner.py",
           ["券叠加 + 渠道比价", "按净收益择优"], A_ENG_BG, A_ENG_ED, A_ENG_TX)
 
-    y3 = 396
-    c.text(M, y3 - 24, "③ 统一目标函数", 13, A_MUTED)
+    y3 = 510
+    c.text(M, y3 - 24, "④ 统一目标函数", 13, A_MUTED)
     c.varrow(mid, y2 + 78, y3 - 18)
     c.band(M, y3, inner, 62, "到手成本 = 现金支出 + 积分消耗 × 影子价格（元/积分）", 20)
 
-    y4 = 502
-    c.text(M, y4 - 24, "④ 输出", 13, A_MUTED)
+    y4 = 616
+    c.text(M, y4 - 24, "⑤ 输出", 13, A_MUTED)
     c.varrow(mid, y3 + 62, y4 - 18)
     c.box(M, y4, cw, 78, "渠道到手价对比",
           ["券后 / 配送 / 打包 / 现金", "积分成本 / 到手成本"], A_OUT_BG, A_OUT_ED, A_OUT_TX)
@@ -324,7 +345,7 @@ def render_architecture(out_path: str) -> tuple:
     c.box(M + (cw + g) * 2, y4, cw, 78, "最优组合与券",
           ["全网最低到手价", "含跨组叠加明细"], A_OUT_BG, A_OUT_ED, A_OUT_TX)
 
-    c.text(M, 604, "实测（2026-10-09，storeCode 1990346，124 项菜单）："
+    c.text(M, 726, "实测（2026-10-09，storeCode 1990346，124 项菜单）："
                    "影子价格 0.1380 元/积分；同一份订单 美团 ¥27.75 / 饿了么 ¥39.94 / 到店 ¥50.50",
            12, A_MUTED)
     c.save(out_path)
@@ -346,6 +367,11 @@ def main() -> int:
          lambda p: render_live(cap_live, p, LIVE_CMD, sec["③"][0])),
         ("screenshot-tests.png",
          lambda p: render_tests_tail(os.path.join(CAPTURES, "tests-verbose.txt"), p)),
+        ("screenshot-rule-parse.png",
+         lambda p: render_rule_parse(
+             os.path.join(CAPTURES, "rule-parse.txt"), p,
+             "python scripts/rule_parser.py --coupons data/sample_coupon_text.json"
+             " --menu data/sample_menu.json")),
     ]
 
     for name, fn in jobs:
