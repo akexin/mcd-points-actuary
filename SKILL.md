@@ -49,7 +49,8 @@ description: 麦麦积分精算师。基于麦当劳中国 MCP，把「渠道费
 2. 本地脚本层需环境变量 `MCD_MCP_TOKEN`（**切勿写入代码或提交仓库**）。
 3. 第三方平台（美团/饿了么）的券面与费率 **MCP 拿不到**，需用户按
    `data/live_third_party.json` 的格式提供；本方提供的是样例，不是实时数据。
-4. Python ≥ 3.9（仅用标准库，无第三方依赖）。
+4. Python ≥ 3.10（仅用标准库，无第三方依赖）。用了 `@dataclass(slots=True)` 与
+   `int.bit_count()`，两者都是 3.10 起才有。
 
 ## 工作流
 
@@ -113,11 +114,22 @@ python scripts/coupon_solver.py --items data/sample_menu.json \
 python scripts/lottery_mc.py --lottery data/sample_lottery.json \
   --products data/sample_points_products.json \
   --refs data/sample_reference_prices.json --draws 33                  # "期望为正"≠"不会亏"
+
+# v3.2 代价优化：少算、少问（**结果不许变**）
+python scripts/combo_search.py --max-items 5 --top 5                   # 剪枝前后逐字段对照
+python scripts/channel_planner.py --menu data/sample_menu.json \
+  --channels data/sample_channels.json optimize --max-items 5 --engine pruned
+python scripts/mcp_cache.py stats                                      # 缓存命中率与省下的调用
+python scripts/mcp_cache.py ttl                                        # 每个工具的 TTL 及其依据
+python tools/bench.py                                                  # 微优化基准（含一条负面结论）
+
+# 缓存开关：默认开。要最新加 --refresh（回源但保留缓存），彻底不要加 --no-cache
+python scripts/run_unified_live.py --refresh
 ```
 
 ### 第 4 步 · 按引擎结论组织回答
 
-引擎给出八类结论，**照实转述，不要自行加戏**：
+引擎给出十类结论，**照实转述，不要自行加戏**：
 
 1. **影子价格**：先说清"1 积分值多少元"，这是后面所有比较的刻度。
    **主口径是周期内最优标的效率（0.1380）**；若同时给出了保守分位或余额处边际效率，
@@ -133,6 +145,12 @@ python scripts/lottery_mc.py --lottery data/sample_lottery.json \
 7. **最晚开始日**：只对"有期限的兑换次数"有效；说了就要说清"再拖会少挽回多少"。
 8. **答案的可靠性等级**：`method=exact` 还是 `beam`？影子价格历史够不够？
    样本不足时引擎会明说降级 —— **照抄那句降级说明，不要替它圆场**。
+9. **枚举规模与搜索方式**：`--engine full`（默认，已公布数字的来源）还是 `pruned`？
+   两者**结果必须逐字段一致**，所以这一点**不需要写进用户结论** ——
+   它是给复核的人看的，不是给用户的。只有真用了近似（`beam`）才必须对用户说。
+10. **MCP 调用次数**：报告会分「逻辑取数」与「实际打到服务端」两个数。
+    要转述时**两个一起说**，只报后者会让人以为是省了缓存命中，只报前者会掩盖真实请求数。
+    数据可能不是此刻的，需要时提示用户加 `--refresh`。
 
 ### 第 5 步 · 输出结论模板
 
@@ -168,6 +186,14 @@ python scripts/lottery_mc.py --lottery data/sample_lottery.json \
 - **抽奖概率 MCP 不返回**，结论只能给到"边界 + 条件"，不允许编造中奖概率。
 - **限流 600 次/分钟**：折扣券原价一律用**一次 `query-meals` 全量拉取 + 本地匹配**；
   渠道枚举、券叠加、积分折算**全部本地完成**。
+- **优化只允许改变耗时与调用次数，不允许改变输出**。组合枚举默认 `full`（全量）、
+  券求解默认 `legacy`；新引擎必须 `--engine` 显式开启。任何一处优化让结果发生变化，
+  一律按 bug 处理 —— 由"剪枝前后逐字段比对"与"新旧引擎 2548 组对拍"守着。
+- **剪枝只用可采纳下界，给不出界就不剪**。券池里出现无封顶折扣券时上界退化为哨兵值，
+  此时 `stats.cuts == 0`、**一律不剪枝**（宁可少剪，也不能剪错）。这条边界会体现在输出里。
+- **缓存有陈旧风险，是刻意的取舍**。券面/库存会中途变化，`TTL` 按工具分档
+  （菜单 30 min / 门店 10 min / 券 5 min / 账户 1 min）；**失败与空载荷永不入缓存**。
+  转述数据时若涉及"此刻是否还能用"，提示 `--refresh` 回源或 `--no-cache` 完全旁路。
 - 只输出建议，**兑换与下单必须由用户确认**。
 
 ## 目录结构
@@ -179,6 +205,8 @@ mcd-points-actuary/
 │   ├── channel_planner.py            # v3 跨渠道到手成本规划器（券叠加 / 组合特价 / 积分成本）
 │   ├── run_unified_live.py           # v3 统一端到端联调（点餐 ⊗ 第三方券 ⊗ 积分）
 │   ├── coupon_solver.py              # v3.1 券叠加约束求解（C1–C4 + 分支定界）
+│   ├── combo_search.py               # v3.2 组合枚举可采纳下界剪枝（省 71~88%）
+│   ├── mcp_cache.py                  # v3.2 MCP 调用 TTL 缓存与预取（失败不入缓存）
 │   ├── expiry_policy.py              # v3.1 跨期序贯策略（有效容量 / 边际效率 / 最晚开始日）
 │   ├── shadow_price.py               # v3.1 影子价格历史与保守分位
 │   ├── lottery_mc.py                 # v3.1 抽奖蒙特卡洛（四假设 + 解析解校验）
@@ -197,7 +225,8 @@ mcd-points-actuary/
 │   ├── sample_lottery.json           # 抽奖活动与奖品池
 │   ├── sample_reference_prices.json  # 折扣券原价映射（菜单实查）
 │   └── sample_menu.json / sample_coupons.json
-└── tests/                            # 243 项离线单元测试
+├── tools/bench.py                    # v3.2 微优化基准（组合数 / 剪枝 / 内存 / 位掩码）
+└── tests/                            # 405 项离线单元测试
 ```
 
 ## 声明

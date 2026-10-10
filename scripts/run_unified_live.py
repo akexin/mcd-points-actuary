@@ -474,7 +474,9 @@ def print_quotes(combo: Sequence[Item], quotes: Sequence[Quote]) -> None:
 # --------------------------------------------------------------------------- #
 # 主流程
 # --------------------------------------------------------------------------- #
-def main(argv: Optional[List[str]] = None) -> int:
+def build_parser() -> argparse.ArgumentParser:
+    """CLI 参数。抽成独立函数是为了让「某个开关到底存不存在」能被测试直接钉住 ——
+    参数散在 ``main`` 里时，只能靠跑一遍完整流程去间接验证它。"""
     ap = argparse.ArgumentParser(description="v3 · 全渠道到手成本统一联调")
     ap.add_argument("--store", default=None, help="门店编码；不传则按 --city/--keyword 定位")
     ap.add_argument("--city", default="南京市")
@@ -498,8 +500,19 @@ def main(argv: Optional[List[str]] = None) -> int:
     ap.add_argument("--pool", choices=("coupon", "menu"), default="coupon",
                     help="候选池：coupon=仅券涉及商品（默认，快）；menu=全菜单")
     ap.add_argument("--offline", action="store_true", help="全离线复现（不连 MCP）")
+    ap.add_argument("--no-cache", action="store_true",
+                    help="旁路 MCP 调用缓存，每次真打服务端（数据要最新时用）")
+    ap.add_argument("--refresh", action="store_true",
+                    help="保留缓存但强制回源：预取时忽略仍新鲜的条目，顺便刷新它们的 TTL")
+    ap.add_argument("--no-prefetch", action="store_true",
+                    help="不预取，按需逐次取数（默认会按 workflow 顺序预取）")
+    ap.add_argument("--cache-dir", default=None, help="缓存目录；缺省 .cache/mcp")
     ap.add_argument("--json", action="store_true")
-    args = ap.parse_args(argv)
+    return ap
+
+
+def main(argv: Optional[List[str]] = None) -> int:
+    args = build_parser().parse_args(argv)
 
     report: Dict[str, Any] = {"source": "offline" if args.offline else "mcp", "calls": []}
 
@@ -512,6 +525,9 @@ def main(argv: Optional[List[str]] = None) -> int:
     claimable: Any = None          # (原始名称列表, 去重后名称列表)
     store: Dict[str, Any] = {}
     delivery_available = False
+    cache: Any = None              # McpCache（--no-cache 时为 None）
+    prefetch_report: Any = None    # PrefetchReport
+    client: Any = None             # MCP 客户端（--offline 时为 None）
 
     # ── 取数 ──────────────────────────────────────────────────────────── #
     if args.offline:
@@ -524,6 +540,15 @@ def main(argv: Optional[List[str]] = None) -> int:
                       for c in _load(OFFLINE_CHANNELS)["channels"][0]["coupons"]]
     else:
         client = MCDMcpClient()
+        if not args.no_cache:
+            from mcp_cache import (  # noqa: PLC0415
+                DEFAULT_CACHE_DIR, CachedMcpClient, McpCache, workflow_tasks,
+            )
+
+            cache = McpCache(args.cache_dir or DEFAULT_CACHE_DIR)
+            client = CachedMcpClient(client, cache)
+            print(f"      MCP 缓存已启用：{os.path.relpath(cache.root, ROOT)}"
+                  f"（按 Tool 分档 TTL，`mcp_cache.py ttl` 看依据）")
         info = client.initialize()
         srv = info.get("result", {}).get("serverInfo", {})
         print(f"[1/6] 已连接 {srv.get('name', 'MCP')} v{srv.get('version', '?')}")
@@ -533,11 +558,27 @@ def main(argv: Optional[List[str]] = None) -> int:
               f"{'，距离 ' + str(store.get('distance')) + 'm' if store.get('distance') else ''}）")
         report["calls"].append("query-nearby-stores")
 
+        # 门店一确定，后面几次调用的参数就都知道了 —— 一次排好队预取，
+        # 而不是走一步发一次请求。已有新鲜缓存的会被跳过。
+        be_code = delivery_be_code(client)
+        if isinstance(client, CachedMcpClient) and not args.no_prefetch:
+            prefetch_report = client.prefetch(
+                workflow_tasks(store["storeCode"], be_code=be_code,
+                               include_delivery=bool(be_code)),
+                refresh=args.refresh)
+            print(f"      预取 {prefetch_report.requested} 项：新拉 {prefetch_report.fetched}"
+                  f" · 缓存已有 {prefetch_report.fresh}"
+                  f" · 失败 {prefetch_report.failed}"
+                  f" → 省下 {prefetch_report.tool_calls_saved} 次调用"
+                  f"{'（--refresh：忽略新鲜缓存，强制回源）' if args.refresh else ''}")
+            if prefetch_report.errors:
+                for err in prefetch_report.errors[:3]:
+                    print(f"        （预取未成功，稍后按需重试）{err}")
+
         pickup_items = fetch_menu(client, store["storeCode"], 1, 1)
         report["calls"].append("query-meals(orderType=1)")
         print(f"      到店菜单 {len(pickup_items)} 项")
 
-        be_code = delivery_be_code(client)
         if be_code:
             try:
                 delivery_items = fetch_menu(client, store["storeCode"], 2, 2, be_code)
@@ -760,7 +801,29 @@ def main(argv: Optional[List[str]] = None) -> int:
     report["measured_yuan_per_point"] = round(measured_ypp, 6)
     report["points_coupons"] = pts_details
 
-    print(f"\n{MCP_CALLS_NOTE.format(n=len(report['calls']))}")
+    # 「逻辑取数次数」与「真正打到服务端的次数」分开报 ——
+    # 只有后者掉下来，缓存才算真的省了东西；混在一起说就是在给自己发奖状。
+    if args.offline:
+        print("\n[离线] 本次未连接 MCP，0 次调用；全部结论由 data/ 下的脱敏快照复现。")
+    else:
+        network_calls = getattr(client, "network_calls", len(report["calls"]))
+        report["network_calls"] = network_calls
+        print(f"\n{MCP_CALLS_NOTE.format(n=len(report['calls']))}")
+        if cache is not None:
+            st = cache.stats
+            report["cache"] = {**st.to_dict(), "network_calls": network_calls,
+                               "prefetch": (prefetch_report.to_dict()
+                                            if prefetch_report else None)}
+            print(f"缓存：逻辑取数 {len(report['calls'])} 次 → 实际打到服务端 "
+                  f"{network_calls} 次（本地缓存答复 {st.run_hits} 次"
+                  f" · 本次命中率 {st.run_hit_rate * 100:.1f}%"
+                  f" · 累计 {st.hit_rate * 100:.1f}%）")
+            if prefetch_report is not None:
+                print(f"预取：{prefetch_report.requested} 项 → 新拉 {prefetch_report.fetched}"
+                      f" · 已有 {prefetch_report.fresh}"
+                      f" · 省下 {prefetch_report.tool_calls_saved} 次")
+            print("      （`python scripts/mcp_cache.py stats` 看明细；"
+                  "只这一轮要最新加 --refresh，彻底不用缓存加 --no-cache）")
     print(DISCLAIMER)
     if args.json:
         print("\n" + json.dumps(report, ensure_ascii=False, indent=2))

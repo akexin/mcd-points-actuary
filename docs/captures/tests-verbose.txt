@@ -1,3 +1,32 @@
+test_only_filter_runs_a_subset (test_bench.TestCli.test_only_filter_runs_a_subset) ... ok
+test_parser_defaults (test_bench.TestCli.test_parser_defaults) ... ok
+test_bench_comb_runs (test_bench.TestCombBenchmark.test_bench_comb_runs) ... ok
+test_fmt_us_switches_units (test_bench.TestCombBenchmark.test_fmt_us_switches_units) ... ok
+test_handwritten_handles_out_of_range (test_bench.TestCombBenchmark.test_handwritten_handles_out_of_range) ... ok
+test_handwritten_matches_math_comb (test_bench.TestCombBenchmark.test_handwritten_matches_math_comb) ... ok
+test_agrees_with_brute_force_by_hand (test_bench.TestMaskBenchmark.test_agrees_with_brute_force_by_hand) ... ok
+test_bench_mask_runs (test_bench.TestMaskBenchmark.test_bench_mask_runs) ... ok
+test_mask_bits_match_positions (test_bench.TestMaskBenchmark.test_mask_bits_match_positions) ... ok
+test_missing_must_include_is_rejected_loudly (test_bench.TestMaskBenchmark.test_missing_must_include_is_rejected_loudly)
+掩码版本建模不了"必选商品不在池里"，所以必须报错而不是静默放行。 ... ok
+test_two_implementations_agree (test_bench.TestMaskBenchmark.test_two_implementations_agree) ... ok
+test_bench_memory_runs (test_bench.TestMemoryBenchmark.test_bench_memory_runs) ... ok
+test_control_class_has_the_same_fields (test_bench.TestMemoryBenchmark.test_control_class_has_the_same_fields) ... ok
+test_slotted_is_smaller_per_object (test_bench.TestMemoryBenchmark.test_slotted_is_smaller_per_object) ... ok
+test_slotted_really_uses_slots (test_bench.TestMemoryBenchmark.test_slotted_really_uses_slots) ... ok
+test_alloc_peak_is_positive_and_keeps_the_result (test_bench.TestSearchBenchmark.test_alloc_peak_is_positive_and_keeps_the_result) ... ok
+test_bench_search_aborts_when_pruning_changes_the_answer (test_bench.TestSearchBenchmark.test_bench_search_aborts_when_pruning_changes_the_answer)
+自检必须真的会拦 —— 否则基准会安静地发布一个错误的加速比。 ... ok
+test_bench_search_runs_end_to_end (test_bench.TestSearchBenchmark.test_bench_search_runs_end_to_end) ... ok
+test_engine_agreement_on_synthetic_pool (test_bench.TestSearchBenchmark.test_engine_agreement_on_synthetic_pool) ... ok
+test_channels_actually_discount_something (test_bench.TestSyntheticData.test_channels_actually_discount_something) ... ok
+test_discount_ceiling_is_not_degenerate (test_bench.TestSyntheticData.test_discount_ceiling_is_not_degenerate)
+上界必须是真的有限值 —— ``UNBOUNDED`` 会让剪枝完全失效。 ... ok
+test_every_coupon_targets_real_codes (test_bench.TestSyntheticData.test_every_coupon_targets_real_codes)
+合成券池必须"打得中"—— 否则抵扣上界退化成 0，剪枝率会假性好看。 ... ok
+test_has_both_stacking_and_single_coupon_channels (test_bench.TestSyntheticData.test_has_both_stacking_and_single_coupon_channels)
+两种渠道都要有 —— 否则 ``allow_stack`` 那条分支根本没被测到。 ... ok
+test_pool_shape (test_bench.TestSyntheticData.test_pool_shape) ... ok
 test_applied_before_order_level_coupon (test_channel_planner.TestBundlePrice.test_applied_before_order_level_coupon) ... ok
 test_breakeven_ypp (test_channel_planner.TestBundlePrice.test_breakeven_ypp) ... ok
 test_multi_item (test_channel_planner.TestBundlePrice.test_multi_item) ... ok
@@ -29,6 +58,14 @@ test_budget_judged_on_landed_cost (test_channel_planner.TestCrossChannelOptimize
 test_must_include_respected (test_channel_planner.TestCrossChannelOptimize.test_must_include_respected) ... ok
 test_no_feasible_plan (test_channel_planner.TestCrossChannelOptimize.test_no_feasible_plan) ... ok
 test_objective_cash_vs_landed (test_channel_planner.TestCrossChannelOptimize.test_objective_cash_vs_landed) ... ok
+test_combo_order_matches_the_menu_not_the_price_sort (test_channel_planner.TestEngineSelection.test_combo_order_matches_the_menu_not_the_price_sort)
+展示顺序按**菜单顺序**，不按价格升序 —— 剪枝内部是价格排序的，必须还原。 ... ok
+test_default_engine_is_the_full_enumeration (test_channel_planner.TestEngineSelection.test_default_engine_is_the_full_enumeration)
+默认必须是全量枚举 —— v1/v2/v3 已公布的数字都出自它。 ... ok
+test_pruned_engine_returns_the_same_best_plan (test_channel_planner.TestEngineSelection.test_pruned_engine_returns_the_same_best_plan) ... ok
+test_ties_are_broken_deterministically (test_channel_planner.TestEngineSelection.test_ties_are_broken_deterministically)
+成本打平的方案（同为 ¥12.00 的中薯条 / 满福堡）顺序必须完全一致。 ... ok
+test_two_engines_agree_across_the_whole_parameter_matrix (test_channel_planner.TestEngineSelection.test_two_engines_agree_across_the_whole_parameter_matrix) ... ok
 test_discount_rate (test_channel_planner.TestNewCouponTypes.test_discount_rate) ... ok
 test_discount_with_cap (test_channel_planner.TestNewCouponTypes.test_discount_with_cap) ... ok
 test_discount_with_threshold (test_channel_planner.TestNewCouponTypes.test_discount_with_threshold) ... ok
@@ -46,6 +83,92 @@ test_zero_shadow_falls_back_to_discount (test_channel_planner.TestPointCostAware
 影子价格为 0 = 把积分当免费 → 退化为纯抵扣额比较（v1 行为）。 ... ok
 test_channels_load (test_channel_planner.TestSampleData.test_channels_load) ... ok
 test_meituan_stack_beats_pickup (test_channel_planner.TestSampleData.test_meituan_stack_beats_pickup) ... ok
+test_codes_absent_from_pool_are_recorded_not_silently_dropped (test_combo_search.TestComboIndex.test_codes_absent_from_pool_are_recorded_not_silently_dropped) ... ok
+test_feasible_matches_satisfies_for_every_subset (test_combo_search.TestComboIndex.test_feasible_matches_satisfies_for_every_subset)
+掩码版与 ``_satisfies`` 全组合对拍 —— 两者必须逐位等同。 ... ok
+test_masks_follow_sorted_positions (test_combo_search.TestComboIndex.test_masks_follow_sorted_positions) ... ok
+test_min_max_items_boundaries (test_combo_search.TestComboIndex.test_min_max_items_boundaries) ... ok
+test_sorted_by_price_then_code (test_combo_search.TestComboIndex.test_sorted_by_price_then_code) ... ok
+test_empty_pool (test_combo_search.TestCountCombos.test_empty_pool) ... ok
+test_k_min_above_pool (test_combo_search.TestCountCombos.test_k_min_above_pool) ... ok
+test_k_range_clamped_to_pool (test_combo_search.TestCountCombos.test_k_range_clamped_to_pool) ... ok
+test_matches_manual_binomials (test_combo_search.TestCountCombos.test_matches_manual_binomials) ... ok
+test_single_k (test_combo_search.TestCountCombos.test_single_k) ... ok
+test_admissible_on_random_pools_and_carts (test_combo_search.TestCouponCeiling.test_admissible_on_random_pools_and_carts)
+核心性质：上界 ≥ 真实抵扣，对**任意**购物车成立。 ... ok
+test_bundle_price_ceiling (test_combo_search.TestCouponCeiling.test_bundle_price_ceiling) ... ok
+test_bundle_price_never_affordable_is_zero (test_combo_search.TestCouponCeiling.test_bundle_price_never_affordable_is_zero) ... ok
+test_buy_get_ceiling_is_the_free_item (test_combo_search.TestCouponCeiling.test_buy_get_ceiling_is_the_free_item) ... ok
+test_buy_get_without_buy_code_is_zero (test_combo_search.TestCouponCeiling.test_buy_get_without_buy_code_is_zero) ... ok
+test_discount_with_cap (test_combo_search.TestCouponCeiling.test_discount_with_cap) ... ok
+test_discount_without_cap_is_unbounded (test_combo_search.TestCouponCeiling.test_discount_without_cap_is_unbounded) ... ok
+test_item_code_not_in_pool_is_zero (test_combo_search.TestCouponCeiling.test_item_code_not_in_pool_is_zero) ... ok
+test_item_discount_capped (test_combo_search.TestCouponCeiling.test_item_discount_capped) ... ok
+test_item_free_is_item_price (test_combo_search.TestCouponCeiling.test_item_free_is_item_price) ... ok
+test_item_reduce_floored_by_item_price (test_combo_search.TestCouponCeiling.test_item_reduce_floored_by_item_price) ... ok
+test_min_items_beyond_pool_is_zero (test_combo_search.TestCouponCeiling.test_min_items_beyond_pool_is_zero) ... ok
+test_missing_item_code_is_zero_not_most_expensive_item (test_combo_search.TestCouponCeiling.test_missing_item_code_is_zero_not_most_expensive_item)
+曾经的实测缺陷：漏掉这条会把上界抬到池子里最贵那件商品。 ... ok
+test_threshold_reduce_ceiling_is_reduce (test_combo_search.TestCouponCeiling.test_threshold_reduce_ceiling_is_reduce) ... ok
+test_unknown_type_is_unbounded (test_combo_search.TestCouponCeiling.test_unknown_type_is_unbounded) ... ok
+test_admissible_against_engine_on_random_channels (test_combo_search.TestDiscountCeiling.test_admissible_against_engine_on_random_channels)
+随机渠道 × 随机券池 × 全部购物车：上界 ≥ 引擎实际抵扣。 ... ok
+test_different_groups_sum (test_combo_search.TestDiscountCeiling.test_different_groups_sum) ... ok
+test_empty_pool (test_combo_search.TestDiscountCeiling.test_empty_pool) ... ok
+test_goods_cap_applies (test_combo_search.TestDiscountCeiling.test_goods_cap_applies) ... ok
+test_max_stack_limits_order_level_groups (test_combo_search.TestDiscountCeiling.test_max_stack_limits_order_level_groups) ... ok
+test_same_group_keeps_only_the_max (test_combo_search.TestDiscountCeiling.test_same_group_keeps_only_the_max) ... ok
+test_unbounded_propagates (test_combo_search.TestDiscountCeiling.test_unbounded_propagates) ... ok
+test_bound_still_admissible_on_this_channel (test_combo_search.TestDiscountCeilingMixedStage.test_bound_still_admissible_on_this_channel) ... ok
+test_ceiling_counts_both_stages (test_combo_search.TestDiscountCeilingMixedStage.test_ceiling_counts_both_stages) ... ok
+test_engine_really_stacks_both_stages (test_combo_search.TestDiscountCeilingMixedStage.test_engine_really_stacks_both_stages) ... ok
+test_naive_group_max_would_underestimate (test_combo_search.TestDiscountCeilingMixedStage.test_naive_group_max_would_underestimate)
+把两段混进一个字典会得到 1000 + 400 = 1400，低于真实抵扣。 ... ok
+test_admissible_on_random_pools_and_channels (test_combo_search.TestMakeBound.test_admissible_on_random_pools_and_channels)
+核心性质：对每个购物车、每个可行报价，``下界 ≤ 到手成本``。 ... ok
+test_explain_names_the_three_pieces (test_combo_search.TestMakeBound.test_explain_names_the_three_pieces) ... ok
+test_huge_discount_ceiling_floors_at_packaging (test_combo_search.TestMakeBound.test_huge_discount_ceiling_floors_at_packaging)
+抵扣上界盖过小计时，下界退化为"只收打包费" —— 松，但仍然可采纳。 ... ok
+test_monotone_non_decreasing_in_goods (test_combo_search.TestMakeBound.test_monotone_non_decreasing_in_goods) ... ok
+test_no_channels_means_unbounded (test_combo_search.TestMakeBound.test_no_channels_means_unbounded) ... ok
+test_price_factor_is_taken_from_the_cheapest_channel (test_combo_search.TestMakeBound.test_price_factor_is_taken_from_the_cheapest_channel) ... ok
+test_target_codes_use_distinct_pool_sum (test_combo_search.TestMakeBound.test_target_codes_use_distinct_pool_sum)
+组合券的上界是所有目标商品的**合计**，不是最贵那件。 ... ok
+test_unbounded_coupon_disables_pruning (test_combo_search.TestMakeBound.test_unbounded_coupon_disables_pruning) ... ok
+test_full_engine_leaves_equal_feasible_combos (test_combo_search.TestPruningEffect.test_full_engine_leaves_equal_feasible_combos)
+``full`` 的枚举量应正好等于可行组合数（约束两段都提前过滤）。 ... ok
+test_large_keep_disables_pruning (test_combo_search.TestPruningEffect.test_large_keep_disables_pruning)
+前 N 名没装满时不给阈值 —— 否则会拿"只有 2 个结果"的边界去剪。 ... ok
+test_no_bound_means_no_bound_cuts (test_combo_search.TestPruningEffect.test_no_bound_means_no_bound_cuts) ... ok
+test_pruning_never_changes_the_answer_on_the_shipped_pool (test_combo_search.TestPruningEffect.test_pruning_never_changes_the_answer_on_the_shipped_pool) ... ok
+test_pruning_saves_work_on_the_shipped_pool (test_combo_search.TestPruningEffect.test_pruning_saves_work_on_the_shipped_pool) ... ok
+test_unbounded_bound_disables_pruning (test_combo_search.TestPruningEffect.test_unbounded_bound_disables_pruning) ... ok
+test_constraint_pruning_matches_satisfies_filtering (test_combo_search.TestSearchDegenerate.test_constraint_pruning_matches_satisfies_filtering)
+约束剪枝与"全枚举 + ``_satisfies`` 过滤"必须给出同一批组合。 ... ok
+test_empty_pool (test_combo_search.TestSearchDegenerate.test_empty_pool) ... ok
+test_everything_infeasible_returns_empty (test_combo_search.TestSearchDegenerate.test_everything_infeasible_returns_empty) ... ok
+test_exclude_removes_subtrees (test_combo_search.TestSearchDegenerate.test_exclude_removes_subtrees) ... ok
+test_k_min_above_pool_size (test_combo_search.TestSearchDegenerate.test_k_min_above_pool_size) ... ok
+test_keep_larger_than_total (test_combo_search.TestSearchDegenerate.test_keep_larger_than_total) ... ok
+test_keep_zero_returns_nothing_but_does_not_crash (test_combo_search.TestSearchDegenerate.test_keep_zero_returns_nothing_but_does_not_crash) ... ok
+test_missing_required_short_circuits (test_combo_search.TestSearchDegenerate.test_missing_required_short_circuits) ... ok
+test_must_include_keeps_only_covering_combos (test_combo_search.TestSearchDegenerate.test_must_include_keeps_only_covering_combos) ... ok
+test_enumeration_order_follows_itertools_combinations (test_combo_search.TestSearchEquivalence.test_enumeration_order_follows_itertools_combinations)
+两个引擎的枚举顺序都应与 ``itertools.combinations`` 一致。 ... ok
+test_full_equals_pruned_field_by_field (test_combo_search.TestSearchEquivalence.test_full_equals_pruned_field_by_field) ... ok
+test_full_matches_independent_brute_force (test_combo_search.TestSearchEquivalence.test_full_matches_independent_brute_force)
+与独立写的暴力枚举对拍（含全部可行组合，不只是前 N）。 ... ok
+test_pruned_matches_brute_force_on_random_pools (test_combo_search.TestSearchEquivalence.test_pruned_matches_brute_force_on_random_pools) ... ok
+test_never_reports_negative_savings (test_combo_search.TestSearchStats.test_never_reports_negative_savings) ... ok
+test_print_stats_and_bound_do_not_crash (test_combo_search.TestSearchStats.test_print_stats_and_bound_do_not_crash) ... ok
+test_properties (test_combo_search.TestSearchStats.test_properties) ... ok
+test_to_dict_is_json_serializable (test_combo_search.TestSearchStats.test_to_dict_is_json_serializable) ... ok
+test_zero_full_nodes_does_not_divide_by_zero (test_combo_search.TestSearchStats.test_zero_full_nodes_does_not_divide_by_zero) ... ok
+test_cli_engines_agree (test_combo_search.TestShippedDataAndCli.test_cli_engines_agree) ... ok
+test_cli_json_mode (test_combo_search.TestShippedDataAndCli.test_cli_json_mode) ... ok
+test_parser_defaults (test_combo_search.TestShippedDataAndCli.test_parser_defaults) ... ok
+test_top_result_on_shipped_pool_is_the_cheapest_single_item (test_combo_search.TestShippedDataAndCli.test_top_result_on_shipped_pool_is_the_cheapest_single_item)
+样例池上的最优解应与"全枚举 + 暴力裁判"一致，且成本不超过任何单件商品。 ... ok
 test_order_mode_sequential_is_not_worse_than_middle (test_coupon_solver.TestDeterminism.test_order_mode_sequential_is_not_worse_than_middle)
 更严格的口径只会给出 ≤ 的抵扣额（这本身就是敏感性分析要看的量）。 ... ok
 test_same_input_same_output (test_coupon_solver.TestDeterminism.test_same_input_same_output) ... ok
@@ -174,6 +297,71 @@ test_single_prize_pool_falls_back_to_uniform (test_lottery_mc.TestWeights.test_s
 退化输入：只有一项奖品时，pessimistic 会把唯一权重置零。 ... ok
 test_uniform_weights_equal (test_lottery_mc.TestWeights.test_uniform_weights_equal) ... ok
 test_unknown_assumption_raises (test_lottery_mc.TestWeights.test_unknown_assumption_raises) ... ok
+test_arguments_are_part_of_the_key (test_mcp_cache.TestCachedClient.test_arguments_are_part_of_the_key) ... ok
+test_business_failure_payload_is_not_cached (test_mcp_cache.TestCachedClient.test_business_failure_payload_is_not_cached) ... ok
+test_call_tool_is_not_cached (test_mcp_cache.TestCachedClient.test_call_tool_is_not_cached)
+原始传输层不缓存：要看原始结构的时候给旧数据没有意义。 ... ok
+test_failures_are_never_cached (test_mcp_cache.TestCachedClient.test_failures_are_never_cached) ... ok
+test_json_and_structured_share_a_key (test_mcp_cache.TestCachedClient.test_json_and_structured_share_a_key)
+两条路径拿到的都是业务 JSON，共用一个缓存空间才有意义。 ... ok
+test_other_attributes_pass_through (test_mcp_cache.TestCachedClient.test_other_attributes_pass_through) ... ok
+test_refresh_bypasses_cache (test_mcp_cache.TestCachedClient.test_refresh_bypasses_cache) ... ok
+test_second_call_hits_cache (test_mcp_cache.TestCachedClient.test_second_call_hits_cache) ... ok
+test_empty_success_is_not_error (test_mcp_cache.TestErrorDetection.test_empty_success_is_not_error)
+业务成功的空结果是**合法答案**（例如"当前无可用券"）。 ... ok
+test_error_flags_are_errors (test_mcp_cache.TestErrorDetection.test_error_flags_are_errors) ... ok
+test_normal_payload_is_not_error (test_mcp_cache.TestErrorDetection.test_normal_payload_is_not_error) ... ok
+test_success_false_is_error (test_mcp_cache.TestErrorDetection.test_success_false_is_error) ... ok
+test_entries_sorted_by_time (test_mcp_cache.TestMaintenance.test_entries_sorted_by_time) ... ok
+test_invalidate_by_tool (test_mcp_cache.TestMaintenance.test_invalidate_by_tool) ... ok
+test_peek_ignores_ttl_and_stats (test_mcp_cache.TestMaintenance.test_peek_ignores_ttl_and_stats) ... ok
+test_purge_clears_everything_and_resets_stats (test_mcp_cache.TestMaintenance.test_purge_clears_everything_and_resets_stats) ... ok
+test_purge_on_missing_dir (test_mcp_cache.TestMaintenance.test_purge_on_missing_dir) ... ok
+test_corrupt_entry_is_dropped_not_fatal (test_mcp_cache.TestPersistence.test_corrupt_entry_is_dropped_not_fatal) ... ok
+test_disabled_cache_never_stores (test_mcp_cache.TestPersistence.test_disabled_cache_never_stores) ... ok
+test_entry_roundtrip_preserves_expiry (test_mcp_cache.TestPersistence.test_entry_roundtrip_preserves_expiry) ... ok
+test_missing_file_is_a_plain_miss (test_mcp_cache.TestPersistence.test_missing_file_is_a_plain_miss) ... ok
+test_non_dict_blob_is_rejected (test_mcp_cache.TestPersistence.test_non_dict_blob_is_rejected) ... ok
+test_non_persistent_cache_is_memoryless (test_mcp_cache.TestPersistence.test_non_persistent_cache_is_memoryless) ... ok
+test_stats_accumulate_across_instances (test_mcp_cache.TestPersistence.test_stats_accumulate_across_instances) ... ok
+test_survives_new_instance (test_mcp_cache.TestPersistence.test_survives_new_instance) ... ok
+test_tampered_entry_is_rejected (test_mcp_cache.TestPersistence.test_tampered_entry_is_rejected)
+文件被人改过 tool/args 时要按坏条目处理，不能拿错内容当答案。 ... ok
+test_prefetch_fetches_all_then_second_run_is_free (test_mcp_cache.TestPrefetch.test_prefetch_fetches_all_then_second_run_is_free) ... ok
+test_prefetch_reports_failures_without_aborting (test_mcp_cache.TestPrefetch.test_prefetch_reports_failures_without_aborting) ... ok
+test_refresh_prefetch_refetches (test_mcp_cache.TestPrefetch.test_refresh_prefetch_refetches) ... ok
+test_repeat_run_costs_zero_calls (test_mcp_cache.TestPrefetch.test_repeat_run_costs_zero_calls)
+这才是缓存真正省下来的东西：整条 workflow 重跑一次，0 次 MCP 调用。 ... ok
+test_ttl_override_in_task (test_mcp_cache.TestPrefetch.test_ttl_override_in_task) ... ok
+test_workflow_includes_delivery_only_with_be_code (test_mcp_cache.TestPrefetch.test_workflow_includes_delivery_only_with_be_code) ... ok
+test_workflow_tasks_cover_the_documented_calls (test_mcp_cache.TestPrefetch.test_workflow_tasks_cover_the_documented_calls) ... ok
+test_columns_line_up (test_mcp_cache.TestPrintStats.test_columns_line_up) ... ok
+test_prints_on_empty_cache (test_mcp_cache.TestPrintStats.test_prints_on_empty_cache) ... ok
+test_prints_without_crashing (test_mcp_cache.TestPrintStats.test_prints_without_crashing) ... ok
+test_allow_stale_reads_expired (test_mcp_cache.TestPutGet.test_allow_stale_reads_expired) ... ok
+test_different_args_are_different_keys (test_mcp_cache.TestPutGet.test_different_args_are_different_keys) ... ok
+test_different_tool_same_args (test_mcp_cache.TestPutGet.test_different_tool_same_args) ... ok
+test_expires_exactly_at_ttl (test_mcp_cache.TestPutGet.test_expires_exactly_at_ttl) ... ok
+test_explicit_ttl_override_shortens (test_mcp_cache.TestPutGet.test_explicit_ttl_override_shortens) ... ok
+test_history_file_is_not_an_entry (test_mcp_cache.TestPutGet.test_history_file_is_not_an_entry)
+统计文件与缓存条目同目录，别把它当条目读出来。 ... ok
+test_key_is_order_insensitive (test_mcp_cache.TestPutGet.test_key_is_order_insensitive) ... ok
+test_per_tool_ttl_is_honored (test_mcp_cache.TestPutGet.test_per_tool_ttl_is_honored) ... ok
+test_rejected_values (test_mcp_cache.TestPutGet.test_rejected_values) ... ok
+test_roundtrip_within_ttl (test_mcp_cache.TestPutGet.test_roundtrip_within_ttl) ... ok
+test_zero_ttl_is_rejected (test_mcp_cache.TestPutGet.test_zero_ttl_is_rejected) ... ok
+test_counters_move_with_behavior (test_mcp_cache.TestStats.test_counters_move_with_behavior) ... ok
+test_empty_stats_do_not_divide_by_zero (test_mcp_cache.TestStats.test_empty_stats_do_not_divide_by_zero) ... ok
+test_hit_rate_arithmetic (test_mcp_cache.TestStats.test_hit_rate_arithmetic) ... ok
+test_run_rate_is_separate_from_cumulative (test_mcp_cache.TestStats.test_run_rate_is_separate_from_cumulative) ... ok
+test_stats_json_safe (test_mcp_cache.TestStats.test_stats_json_safe) ... ok
+test_account_ttl_is_the_shortest (test_mcp_cache.TestTtlTable.test_account_ttl_is_the_shortest)
+积分余额是唯一"会被立刻改变"的数据，必须是最短档。 ... ok
+test_documented_buckets (test_mcp_cache.TestTtlTable.test_documented_buckets) ... ok
+test_every_tool_has_a_reason_or_falls_back (test_mcp_cache.TestTtlTable.test_every_tool_has_a_reason_or_falls_back) ... ok
+test_override_wins (test_mcp_cache.TestTtlTable.test_override_wins) ... ok
+test_unknown_tool_gets_conservative_default (test_mcp_cache.TestTtlTable.test_unknown_tool_gets_conservative_default)
+忘了配 TTL 的代价应该是"多打一次"，不是"永久缓存"。 ... ok
 test_budget_filter (test_optimizer.TestConstraints.test_budget_filter) ... ok
 test_calorie_cap (test_optimizer.TestConstraints.test_calorie_cap) ... ok
 test_exclude (test_optimizer.TestConstraints.test_exclude) ... ok
@@ -269,6 +457,11 @@ test_quantile_degenerate_inputs (test_shadow_price.TestStatistics.test_quantile_
 test_quantile_linear_interpolation (test_shadow_price.TestStatistics.test_quantile_linear_interpolation) ... ok
 test_slope_sign (test_shadow_price.TestStatistics.test_slope_sign) ... ok
 test_pool_is_coupon_related (test_unified_live.TestCandidatePool.test_pool_is_coupon_related) ... ok
+test_cache_flags_are_accepted (test_unified_live.TestCliFlags.test_cache_flags_are_accepted) ... ok
+test_cache_flags_default_off (test_unified_live.TestCliFlags.test_cache_flags_default_off) ... ok
+test_offline_default_is_false (test_unified_live.TestCliFlags.test_offline_default_is_false) ... ok
+test_refresh_and_no_cache_are_independent (test_unified_live.TestCliFlags.test_refresh_and_no_cache_are_independent)
+``--refresh`` 是"回源但保留缓存"，``--no-cache`` 是"根本不用缓存"，两者不同。 ... ok
 test_live_third_party_resolves_against_live_menu (test_unified_live.TestLoadChannels.test_live_third_party_resolves_against_live_menu)
 仓库里的 live_third_party.json 必须能被**实查菜单**完整解析。 ... ok
 test_threshold_reduce (test_unified_live.TestMapCoupons.test_threshold_reduce) ... ok
@@ -292,6 +485,6 @@ test_overlong_is_not_truncated (test_unified_live.TestTerminalWidth.test_overlon
 test_pad_reaches_exact_columns (test_unified_live.TestTerminalWidth.test_pad_reaches_exact_columns) ... ok
 
 ----------------------------------------------------------------------
-Ran 243 tests in 1.539s
+Ran 405 tests in 10.233s
 
 OK

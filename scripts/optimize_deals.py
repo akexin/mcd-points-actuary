@@ -31,6 +31,7 @@ from __future__ import annotations
 import argparse
 import itertools
 import json
+import math
 import sys
 from dataclasses import dataclass, field
 from typing import Any, Dict, Iterable, List, Optional, Tuple
@@ -56,10 +57,15 @@ def fmt_yuan(cents: int) -> str:
     return f"¥{cents / 100:.2f}"
 
 
+# 手写的组合数被换成标准库实现 —— ``math.comb`` 是 C 版本，在剪枝预判的热路径上
+# 每轮都要调上百次，这里的差距不是"风格问题"。（见 tools/bench.py 的对照。）
+_comb = math.comb
+
+
 # --------------------------------------------------------------------------- #
 # 数据模型
 # --------------------------------------------------------------------------- #
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class Item:
     code: str
     name: str
@@ -80,7 +86,7 @@ class Item:
         )
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class Coupon:
     """优惠券的通用描述（跨渠道统一模型）。
 
@@ -155,7 +161,7 @@ class Coupon:
 ITEM_LEVEL_TYPES = frozenset({"item_free", "item_reduce", "item_discount", "buy_get", "bundle_price"})
 
 
-@dataclass
+@dataclass(slots=True)
 class Constraints:
     budget_cents: Optional[int] = None
     min_items: int = 1
@@ -165,7 +171,7 @@ class Constraints:
     exclude: Tuple[str, ...] = ()
 
 
-@dataclass
+@dataclass(slots=True)
 class Plan:
     items: List[Item]
     subtotal_cents: int
@@ -353,13 +359,6 @@ def _prune_items(items: List[Item], cons: Constraints, max_combos: int) -> Tuple
     return list(keep.values()), True
 
 
-def _comb(n: int, k: int) -> int:
-    if k < 0 or k > n:
-        return 0
-    r = 1
-    for i in range(1, k + 1):
-        r = r * (n - i + 1) // i
-    return r
 
 
 def optimize(

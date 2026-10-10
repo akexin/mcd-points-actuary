@@ -20,9 +20,9 @@ import unittest
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "scripts"))
 
 from channel_planner import (  # noqa: E402
-    Channel, ChannelPlan, apply_coupons, breakeven_ypp, channel_savings,
-    compare_channels, optimize_across_channels, point_bundle_coupon, point_coupon,
-    price_in_channel,
+    COMBOS_FULL, COMBOS_PRUNED, Channel, ChannelPlan, apply_coupons, breakeven_ypp,
+    channel_savings, compare_channels, optimize_across_channels, point_bundle_coupon,
+    point_coupon, price_in_channel,
 )
 from optimize_deals import (  # noqa: E402
     Constraints, Coupon, Item, fmt_yuan, single_coupon_discount, to_cents,
@@ -400,6 +400,85 @@ class TestSampleData(unittest.TestCase):
         self.assertLess(quotes["meituan"].landed_cents, quotes["mcd-pickup"].landed_cents)
         # 到店自取绝不应选中"500 积分换巨无霸"（机会成本 ¥69 远高于抵扣 ¥24.5）
         self.assertNotIn("PTS-BIGMAC", [c.id for c in quotes["mcd-pickup"].coupons])
+
+
+class TestEngineSelection(unittest.TestCase):
+    """``engine=pruned`` 只能省时间，**不允许**改变任何一个字节的结果。
+
+    这一条曾经真的红过：分支定界只保留前 N 条，成本打平时**边界上的并列者**
+    取决于各自的枚举顺序，于是两个引擎各挑了一个"同样便宜但不同"的方案。
+    修法是把排序键做成全序（末位用池内下标元组兜底），本类把这个性质钉住。
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        with open(os.path.join(DATA, "sample_channels.json"), encoding="utf-8") as f:
+            cls.channels = [Channel.from_dict(c) for c in json.load(f)["channels"]]
+        with open(os.path.join(DATA, "sample_menu.json"), encoding="utf-8") as f:
+            cls.items = [Item.from_dict(d) for d in json.load(f)]
+
+    def _run(self, engine, **kw):
+        cons = Constraints(min_items=kw.pop("min_items", 1), max_items=kw.pop("max_items", 3),
+                           budget_cents=kw.pop("budget_cents", None),
+                           must_include=kw.pop("must_include", ()),
+                           exclude=kw.pop("exclude", ()))
+        plans, pool_pruned = optimize_across_channels(
+            self.items, self.channels, cons, engine=engine, **kw)
+        return [p.to_dict() for p in plans], pool_pruned
+
+    def test_two_engines_agree_across_the_whole_parameter_matrix(self):
+        kw_matrix = [
+            dict(max_items=1), dict(max_items=2), dict(max_items=3),
+            dict(max_items=4), dict(max_items=5),
+            dict(max_items=3, objective="cash"),
+            dict(max_items=3, shadow_ypp=0.05),
+            dict(max_items=3, shadow_ypp=0.138),
+            dict(max_items=3, must_include=("BURGER-BIGMAC",)),
+            dict(max_items=4, exclude=("SUNDAE",)),
+            dict(max_items=3, budget_cents=to_cents(30)),
+            dict(max_items=5, top=20),
+            dict(max_items=2, min_items=2),
+        ]
+        for kw in kw_matrix:
+            with self.subTest(**kw):
+                full, _ = self._run(COMBOS_FULL, **kw)
+                pruned, _ = self._run(COMBOS_PRUNED, **kw)
+                self.assertEqual(full, pruned)
+
+    def test_ties_are_broken_deterministically(self):
+        """成本打平的方案（同为 ¥12.00 的中薯条 / 满福堡）顺序必须完全一致。
+
+        样例数据里「中薯条」和「满福堡」都是 ¥12.00，且都无券可用，
+        因此到手成本逐分相同 —— 这正是当初暴露问题的用例。
+        """
+        full, _ = self._run(COMBOS_FULL, max_items=2, top=12)
+        pruned, _ = self._run(COMBOS_PRUNED, max_items=2, top=12)
+        self.assertEqual([p["item_codes"] for p in full],
+                         [p["item_codes"] for p in pruned])
+        tied = [p for p in full if p["landed_cents"] == 1200 and len(p["item_codes"]) == 1]
+        self.assertGreaterEqual(len(tied), 2, "本用例依赖样例数据里 ¥12.00 的并列")
+        self.assertEqual([p["item_codes"][0] for p in tied][:2],
+                         ["FRIES-M", "BREAKFAST-MCMUFFIN"])   # 按**菜单顺序**，不按字母序
+
+    def test_default_engine_is_the_full_enumeration(self):
+        """默认必须是全量枚举 —— v1/v2/v3 已公布的数字都出自它。"""
+        default, _ = self._run(COMBOS_FULL)
+        self.assertEqual(default, self._run("full")[0])
+
+    def test_pruned_engine_returns_the_same_best_plan(self):
+        full, _ = self._run(COMBOS_FULL, max_items=5, top=1)
+        pruned, _ = self._run(COMBOS_PRUNED, max_items=5, top=1)
+        self.assertEqual(full[0]["landed_cents"], pruned[0]["landed_cents"])
+        self.assertEqual(full[0]["item_codes"], pruned[0]["item_codes"])
+        self.assertEqual(full[0]["best_channel"], pruned[0]["best_channel"])
+
+    def test_combo_order_matches_the_menu_not_the_price_sort(self):
+        """展示顺序按**菜单顺序**，不按价格升序 —— 剪枝内部是价格排序的，必须还原。"""
+        plans, _ = self._run(COMBOS_PRUNED, max_items=3, top=20)
+        menu_pos = {i.code: n for n, i in enumerate(self.items)}
+        for p in plans:
+            idx = [menu_pos[c] for c in p["item_codes"]]
+            self.assertEqual(idx, sorted(idx), msg=f"{p['item_codes']} 未按菜单顺序")
 
 
 if __name__ == "__main__":

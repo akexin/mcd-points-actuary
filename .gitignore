@@ -16,6 +16,9 @@ token.txt
 data/current_*.json
 data/personal_*.json
 
+# MCP 调用缓存（本地复用用，绝不入库 —— 里面是真实接口响应）
+.cache/
+
 # 编辑器
 .idea/
 .vscode/

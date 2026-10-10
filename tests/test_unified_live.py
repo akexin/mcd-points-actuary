@@ -21,8 +21,8 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "scripts"))
 
 from optimize_deals import Item, to_cents  # noqa: E402
 from run_unified_live import (  # noqa: E402
-    candidate_pool, dpad, dwidth, load_channels, map_coupons, menu_items,
-    points_coupons, resolve_coupon_rows,
+    build_parser, candidate_pool, dpad, dwidth, load_channels, map_coupons,
+    menu_items, points_coupons, resolve_coupon_rows,
 )
 
 DATA = os.path.join(os.path.dirname(__file__), "..", "data")
@@ -245,6 +245,35 @@ class TestTerminalWidth(unittest.TestCase):
         # 两行的列边界完全重合 → 目视对齐
         self.assertEqual(edges[0], edges[1])
         self.assertEqual(edges[0], [28, 36, 46, 56])
+
+
+class TestCliFlags(unittest.TestCase):
+    """缓存相关的开关散在 ``main`` 里时测不到，现在 ``build_parser`` 可以单独验。"""
+
+    def test_cache_flags_default_off(self):
+        args = build_parser().parse_args([])
+        self.assertFalse(args.no_cache)
+        self.assertFalse(args.refresh)
+        self.assertFalse(args.no_prefetch)
+        self.assertIsNone(args.cache_dir)
+
+    def test_cache_flags_are_accepted(self):
+        args = build_parser().parse_args(["--no-cache"])
+        self.assertTrue(args.no_cache)
+        args = build_parser().parse_args(["--refresh"])
+        self.assertTrue(args.refresh)
+        args = build_parser().parse_args(["--refresh", "--cache-dir", "/tmp/x"])
+        self.assertTrue(args.refresh)
+        self.assertEqual(args.cache_dir, "/tmp/x")
+
+    def test_refresh_and_no_cache_are_independent(self):
+        """``--refresh`` 是"回源但保留缓存"，``--no-cache`` 是"根本不用缓存"，两者不同。"""
+        args = build_parser().parse_args(["--refresh", "--no-cache"])
+        self.assertTrue(args.refresh)
+        self.assertTrue(args.no_cache)
+
+    def test_offline_default_is_false(self):
+        self.assertFalse(build_parser().parse_args([]).offline)
 
 
 if __name__ == "__main__":

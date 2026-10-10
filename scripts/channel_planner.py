@@ -46,6 +46,9 @@ import sys
 from dataclasses import dataclass, field, replace
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
 
+from combo_search import (  # noqa: E402
+    COMBOS_FULL, COMBOS_PRUNED, ComboIndex, make_bound, search,
+)
 from optimize_deals import (
     ITEM_LEVEL_TYPES, Constraints, Coupon, Item, _prune_items, _satisfies, fmt_yuan,
     single_coupon_discount, to_cents,
@@ -66,7 +69,7 @@ ENGINE_CONSTRAINT = "constraint"  # 通用约束求解器（额外保证商品�
 # --------------------------------------------------------------------------- #
 # 渠道与报价模型
 # --------------------------------------------------------------------------- #
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class Channel:
     """一个点餐渠道：自有或第三方，含其费用结构与券池。"""
 
@@ -118,7 +121,7 @@ class Channel:
         }
 
 
-@dataclass
+@dataclass(slots=True)
 class CouponApplication:
     """券在某个购物车上的落地结果。"""
 
@@ -140,7 +143,7 @@ class CouponApplication:
         }
 
 
-@dataclass
+@dataclass(slots=True)
 class Quote:
     """某个渠道对某个购物车的完整报价。"""
 
@@ -394,7 +397,7 @@ def compare_channels(
 # --------------------------------------------------------------------------- #
 # 跨渠道组合优化
 # --------------------------------------------------------------------------- #
-@dataclass
+@dataclass(slots=True)
 class ChannelPlan:
     """一个购物车 + 其在最优渠道上的报价。"""
 
@@ -433,6 +436,7 @@ def optimize_across_channels(
     shadow_ypp: float = 0.0,
     max_combos: int = 200_000,
     objective: str = "landed",
+    engine: str = COMBOS_FULL,
 ) -> Tuple[List[ChannelPlan], bool]:
     """在全渠道上求解到手成本最低的 Top-N 方案。
 
@@ -440,6 +444,16 @@ def optimize_across_channels(
     因为用户真正关心的是"我最后要付出多少"。
 
     ``objective`` 取 ``landed``（现金+积分机会成本，默认）或 ``cash``（只看现金）。
+
+    ``engine`` 选择组合枚举方式：
+
+    - ``full``（默认）：笛卡尔积全量枚举 —— **v1/v2/v3 已公布数字的来源**，保持逐字节不变。
+    - ``pruned``：:mod:`combo_search` 的分支定界。用"再涨也赢不了"的可采纳下界
+      整棵剪掉子树，枚举量大幅下降，**结果与 ``full`` 逐字段相同**（见
+      ``tests/test_combo_search.py`` 的对拍与 ``tools/bench.py`` 的实测）。
+
+    ``pruned`` 不做任何取舍：不可行的组合照样会被 :func:`optimize_deals._satisfies`
+    与渠道定价判掉，下界只负责让它们**更早**被判掉。
     """
     # 预算交给渠道定价后再判定，因此这里先摘掉 budget
     base = Constraints(
@@ -451,28 +465,57 @@ def optimize_across_channels(
         exclude=cons.exclude,
     )
     pool, pruned = _prune_items(list(items), base, max_combos)
+    k_max = min(base.max_items, len(pool))
+    pos = {it.code: n for n, it in enumerate(pool)}
+
+    def score(combo_list: List[Item]) -> Optional[Tuple[Tuple[Any, ...], ChannelPlan]]:
+        """购物车 → ``((成本, 件数, 池内下标元组), 方案)``；约束不满足 / 不可行 / 超预算 → None。
+
+        约束判定**只在这里**做一次，两个引擎共用同一份语义 ——
+        剪枝路径里的掩码是对它的**加速**，不是它的替代品，
+        所以即便掩码写错也不会改变答案（只会少省一点时间）。
+
+        排序键是**全序**：末位那个下标元组把"成本打平"的情况也定死。
+        只按 ``(成本, 件数)`` 排是不够的 —— 分支定界只保留前 N 条，
+        并列者选谁就会取决于各自的枚举顺序，两个引擎会各挑一个"同样便宜但不同"的方案。
+        全序则保证它们挑的是同一个。``key[0]`` 仍是成本，下界比较的就是它。
+        """
+        if not _satisfies(combo_list, base):
+            return None
+        quotes = compare_channels(combo_list, channels, shadow_ypp=shadow_ypp)
+        feasible = [q for q in quotes if q.feasible]
+        if not feasible:
+            return None
+        pick = (lambda q: q.landed_cents) if objective == "landed" else (lambda q: q.cash_cents)
+        best = min(feasible, key=pick)
+        if cons.budget_cents is not None and best.landed_cents > cons.budget_cents:
+            return None
+        primary = best.landed_cents if objective == "landed" else best.cash_cents
+        plan = ChannelPlan(combo=combo_list, best=best, quotes=quotes)
+        return (primary, len(combo_list), tuple(pos[i.code] for i in combo_list)), plan
 
     import itertools
-    scored: List[ChannelPlan] = []
-    n = len(pool)
-    for k in range(base.min_items, min(base.max_items, n) + 1):
-        for combo in itertools.combinations(pool, k):
-            combo_list = list(combo)
-            if not _satisfies(combo_list, base):
-                continue
-            quotes = compare_channels(combo_list, channels, shadow_ypp=shadow_ypp)
-            feasible = [q for q in quotes if q.feasible]
-            if not feasible:
-                continue
-            key = (lambda q: q.landed_cents) if objective == "landed" else (lambda q: q.cash_cents)
-            best = min(feasible, key=key)
-            if cons.budget_cents is not None and best.landed_cents > cons.budget_cents:
-                continue
-            scored.append(ChannelPlan(combo=combo_list, best=best, quotes=quotes))
+    scored: List[Tuple[Tuple[Any, ...], ChannelPlan]] = []
+    if engine == COMBOS_PRUNED and pool:
+        idx = ComboIndex(pool, base)
+        bound_fn, _info = make_bound(channels, idx.items, item_count=k_max)
 
-    scored.sort(key=(lambda p: (p.best.landed_cents, len(p.combo)))
-                if objective == "landed" else (lambda p: (p.best.cash_cents, len(p.combo))))
-    return scored[:top], pruned
+        def evaluate(combo):
+            # 搜索按价格升序给组合；还原成**池子顺序**，
+            # 否则 ChannelPlan.combo 的展示顺序与下标元组都会与全量枚举不一致。
+            ordered = sorted(combo, key=lambda it: pos[it.code])
+            return score(ordered)
+
+        scored, _stats = search(idx, evaluate, bound=bound_fn, keep=top, engine=COMBOS_PRUNED)
+    else:
+        for k in range(base.min_items, k_max + 1):
+            for combo in itertools.combinations(pool, k):
+                got = score(list(combo))
+                if got is not None:
+                    scored.append(got)
+
+    scored.sort(key=lambda row: row[0])
+    return [plan for _key, plan in scored[:top]], pruned
 
 
 def channel_savings(plans: Sequence[ChannelPlan], channels: Sequence[Channel]) -> Dict[str, Any]:
@@ -592,6 +635,9 @@ def build_parser() -> argparse.ArgumentParser:
     o.add_argument("--exclude", nargs="*", default=None)
     o.add_argument("--objective", choices=("landed", "cash"), default="landed")
     o.add_argument("--top", type=int, default=5)
+    o.add_argument("--engine", choices=(COMBOS_FULL, COMBOS_PRUNED), default=COMBOS_FULL,
+                   help="组合枚举引擎：full=全量枚举（默认，已公布数字的来源）；"
+                        "pruned=分支定界，结果相同但枚举量更少")
     o.add_argument("--json", action="store_true")
     return p
 
@@ -625,9 +671,9 @@ def main(argv: Optional[List[str]] = None) -> int:
             must_include=tuple(args.must_include or ()),
             exclude=tuple(args.exclude or ()),
         )
-        plans, pruned = optimize_across_channels(
+        plans, pool_pruned = optimize_across_channels(
             items, channels, cons, top=args.top,
-            shadow_ypp=args.shadow_ypp, objective=args.objective,
+            shadow_ypp=args.shadow_ypp, objective=args.objective, engine=args.engine,
         )
         if args.json:
             print(json.dumps([p.to_dict() for p in plans], ensure_ascii=False, indent=2))
@@ -635,7 +681,10 @@ def main(argv: Optional[List[str]] = None) -> int:
         if not plans:
             print("没有满足约束的方案，请放宽 --budget / --max-items。")
             return 1
-        print(f"全渠道求解（{'已剪枝' if pruned else '全量枚举'}，"
+        label = "已剪枝" if pool_pruned else "全量枚举"
+        if args.engine == COMBOS_PRUNED:
+            label += "（组合枚举：分支定界）"
+        print(f"全渠道求解（{label}，"
               f"目标={'到手成本' if args.objective == 'landed' else '现金'}）：\n")
         for i, p in enumerate(plans, 1):
             print(f"{i}. 到手 {fmt_yuan(p.landed_cents)}（现金 {fmt_yuan(p.cash_cents)}"
